@@ -140,3 +140,8 @@ export function toggleGroup(groupId: string) {
     joinedGroups: p.joinedGroups.includes(groupId) ? p.joinedGroups.filter((x) => x !== groupId) : [...p.joinedGroups, groupId],
   }));
 }
+export function toggleSavedStay(stayId: string) {
+  setProfile((p) => ({
+    savedStays: p.savedStays.includes(stayId) ? p.savedStays.filter((x) => x !== stayId) : [...p.savedStays, stayId],
+  }));
+}
