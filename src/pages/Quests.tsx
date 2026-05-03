@@ -90,7 +90,7 @@ export default function QuestsPage() {
         </div>
       </header>
 
-      <div className="px-5 pt-4">
+      <div className="px-5 pt-4 pb-32">
         <QuestSwiper
           quests={deck}
           onTap={(q) => setOpenQuest(q)}
