@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { UK_PLACES, AVATARS, UKPlace } from "@/data/places";
 import { setProfile, useProfile } from "@/lib/store";
 import { celebrate } from "@/lib/confetti";
-import { MapPin, Search, ChevronRight, Sparkles, LocateFixed } from "lucide-react";
+import { MapPin, Search, ChevronRight, Sparkles, LocateFixed, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Onboarding() {
   const profile = useProfile();
@@ -18,26 +19,69 @@ export default function Onboarding() {
   const [radius, setRadius] = useState(profile.radiusMiles || 25);
   const [noLimit, setNoLimit] = useState(false);
 
-  const matches = query.trim()
-    ? UK_PLACES.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
-    : [];
+  const [matches, setMatches] = useState<UKPlace[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const debounceRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+    if (q.length < 2) { setMatches([]); setSearching(false); return; }
+    setSearching(true);
+    debounceRef.current = window.setTimeout(async () => {
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      try {
+        const { data, error } = await supabase.functions.invoke("geocode", { body: { q } });
+        if (ctrl.signal.aborted) return;
+        if (error) throw error;
+        const results = (data?.results || []) as UKPlace[];
+        if (results.length) setMatches(results);
+        else setMatches(UK_PLACES.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())).slice(0, 6));
+      } catch {
+        setMatches(UK_PLACES.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())).slice(0, 6));
+      } finally {
+        if (!ctrl.signal.aborted) setSearching(false);
+      }
+    }, 250);
+  }, [query]);
 
   const useGeo = () => {
-    if (!navigator.geolocation) return toast("Geolocation not available");
+    if (!navigator.geolocation) return toast("Geolocation not available on this device");
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // snap to nearest seeded place
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
-        let best = UK_PLACES[0]; let bestD = Infinity;
-        for (const p of UK_PLACES) {
-          const d = Math.hypot(p.lat - latitude, p.lng - longitude);
-          if (d < bestD) { bestD = d; best = p; }
+        try {
+          const { data, error } = await supabase.functions.invoke("geocode", {
+            body: { lat: latitude, lng: longitude },
+          });
+          if (error) throw error;
+          const p = (data?.place as UKPlace | null) ?? null;
+          if (p) {
+            setPlace(p);
+            toast(`Location set: ${p.name}${p.region ? `, ${p.region}` : ""}`);
+          } else {
+            setPlace({ name: "Near me", region: "", lat: latitude, lng: longitude });
+            toast("Location set");
+          }
+        } catch {
+          setPlace({ name: "Near me", region: "", lat: latitude, lng: longitude });
+          toast("Got your location (couldn't fetch place name)");
+        } finally {
+          setLocating(false);
         }
-        setPlace({ name: "Near me", region: best.region, lat: latitude, lng: longitude });
-        toast(`Location set near ${best.name}`);
       },
-      () => toast("Couldn't get location — pick one below."),
-      { enableHighAccuracy: false, timeout: 5000 },
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) toast("Location permission denied");
+        else if (err.code === err.TIMEOUT) toast("Location request timed out");
+        else toast("Couldn't get location — pick one below.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   };
 
@@ -107,8 +151,9 @@ export default function Onboarding() {
             <h2 className="font-display text-4xl">Where are you?</h2>
             <p className="mt-2 text-muted-foreground">We'll surface quests around you.</p>
 
-            <button onClick={useGeo} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-electric px-4 py-3 font-bold shadow-sticker-sm sticker-tap">
-              <LocateFixed className="h-5 w-5" strokeWidth={2.5}/> Use current location
+            <button onClick={useGeo} disabled={locating} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-electric px-4 py-3 font-bold shadow-sticker-sm sticker-tap disabled:opacity-60">
+              {locating ? <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5}/> : <LocateFixed className="h-5 w-5" strokeWidth={2.5}/>}
+              {locating ? "Locating…" : "Use current location"}
             </button>
 
             <div className="my-3 text-center text-xs font-semibold text-muted-foreground">or pick a place</div>
@@ -118,25 +163,29 @@ export default function Onboarding() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search UK city or area"
-                className="w-full rounded-2xl border-2 border-foreground bg-card py-3 pl-10 pr-4 font-semibold shadow-sticker-sm outline-none"
+                placeholder="Search any UK place, town or postcode"
+                className="w-full rounded-2xl border-2 border-foreground bg-card py-3 pl-10 pr-10 font-semibold shadow-sticker-sm outline-none"
               />
+              {searching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin opacity-70"/>}
             </div>
             {matches.length > 0 && (
               <div className="mt-2 space-y-1.5">
-                {matches.map((p) => (
-                  <button key={p.name} onClick={() => { setPlace(p); setQuery(p.name); }}
+                {matches.map((p, i) => (
+                  <button key={`${p.name}-${p.lat}-${i}`} onClick={() => { setPlace(p); setQuery(p.name); setMatches([]); }}
                     className="flex w-full items-center justify-between rounded-xl border-2 border-foreground bg-card px-3 py-2 text-left shadow-sticker-sm sticker-tap">
-                    <span><span className="font-bold">{p.name}</span> <span className="text-xs text-muted-foreground">{p.region}</span></span>
+                    <span><span className="font-bold">{p.name}</span> {p.region && <span className="text-xs text-muted-foreground">{p.region}</span>}</span>
                     <ChevronRight className="h-4 w-4"/>
                   </button>
                 ))}
               </div>
             )}
+            {!searching && query.trim().length >= 2 && matches.length === 0 && (
+              <div className="mt-2 rounded-xl border-2 border-dashed border-foreground/30 bg-card px-3 py-2 text-sm text-muted-foreground">No matches — try a different spelling.</div>
+            )}
 
             {place && (
               <div className="mt-4 rounded-2xl border-2 border-foreground bg-sun p-4 shadow-sticker-sm">
-                <div className="flex items-center gap-2 font-display text-lg"><MapPin className="h-5 w-5"/> {place.name}, {place.region}</div>
+                <div className="flex items-center gap-2 font-display text-lg"><MapPin className="h-5 w-5"/> {place.name}{place.region ? `, ${place.region}` : ""}</div>
 
                 <div className="mt-4 flex items-center justify-between">
                   <span className="font-display text-2xl">{noLimit ? "∞" : `${radius} mi`}</span>
