@@ -151,8 +151,9 @@ export default function Onboarding() {
             <h2 className="font-display text-4xl">Where are you?</h2>
             <p className="mt-2 text-muted-foreground">We'll surface quests around you.</p>
 
-            <button onClick={useGeo} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-electric px-4 py-3 font-bold shadow-sticker-sm sticker-tap">
-              <LocateFixed className="h-5 w-5" strokeWidth={2.5}/> Use current location
+            <button onClick={useGeo} disabled={locating} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-electric px-4 py-3 font-bold shadow-sticker-sm sticker-tap disabled:opacity-60">
+              {locating ? <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5}/> : <LocateFixed className="h-5 w-5" strokeWidth={2.5}/>}
+              {locating ? "Locating…" : "Use current location"}
             </button>
 
             <div className="my-3 text-center text-xs font-semibold text-muted-foreground">or pick a place</div>
