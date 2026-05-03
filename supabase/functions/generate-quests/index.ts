@@ -39,9 +39,30 @@ async function callAI(messages: any[], tools?: any[], tool_choice?: any) {
   return res.json();
 }
 
-function imageFor(category: string, city: string, venue: string) {
-  const kw = encodeURIComponent(`${category},${venue.split(" ").slice(0,2).join(",")},${city}`);
-  return `https://source.unsplash.com/featured/900x700/?${kw}`;
+const CATEGORY_TAGS: Record<string, string> = {
+  active: "sport,fitness,activity",
+  chill: "cozy,relax,lounge",
+  foodie: "restaurant,food,dining",
+  water: "water,swimming,beach",
+  climb: "climbing,bouldering",
+  ride: "cycling,skateboarding",
+  nightlife: "bar,nightlife,cocktail",
+  nature: "landscape,nature,outdoors",
+};
+
+function imageFor(category: string, _city: string, venue: string, imageKeyword?: string) {
+  // Use the model's imageKeyword (most specific) + category tags for reliable, on-brief photos.
+  const kw = (imageKeyword || venue || category)
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 3)
+    .join(",");
+  const tags = [kw, CATEGORY_TAGS[category] || category].filter(Boolean).join(",");
+  // Loremflickr returns a real Flickr photo matching the tags. Seeded so each quest is stable.
+  const seed = Math.abs([...(venue || kw)].reduce((a, c) => a + c.charCodeAt(0), 0));
+  return `https://loremflickr.com/900/700/${encodeURIComponent(tags)}?lock=${seed}`;
 }
 
 function emojiFor(c: string) {
