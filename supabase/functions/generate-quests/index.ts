@@ -187,7 +187,7 @@ Return EXACTLY ${count} quests via the return_quests tool.`;
         lng: q.lng,
         category: cat,
         emoji: emojiFor(cat),
-        image: imageFor(cat, q.city || town, imgKw),
+        image: imageFor(cat, q.city || town, q.venue || "", imgKw),
         blurb: q.blurb,
         description: q.description,
         durationMin: q.durationMin,
