@@ -10,7 +10,7 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
   const profile = useProfile();
   if (!quest) return null;
   const dist = profile.location ? distanceMiles(profile.location, quest) : null;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${quest.lat},${quest.lng}`;
+  const mapsUrl = quest.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${quest.lat},${quest.lng}`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
