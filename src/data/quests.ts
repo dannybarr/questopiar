@@ -20,6 +20,10 @@ export interface Quest {
   vibes: Vibe[];
   bring?: string[];
   pricePerNight?: number;
+  source?: "seed" | "ai";
+  address?: string;
+  mapsUrl?: string;
+  randomness?: number;
 }
 
 const img = (q: string, seed: number) =>
