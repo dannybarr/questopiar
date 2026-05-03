@@ -26,6 +26,7 @@ export interface Profile {
   active: ActiveQuest[];
   upvoted: string[];
   joinedGroups: string[];
+  savedStays: string[];
 }
 
 const KEY = "sidequest:v1";
@@ -44,6 +45,7 @@ const initial: Profile = {
   active: [],
   upvoted: [],
   joinedGroups: [],
+  savedStays: [],
 };
 
 let state: Profile = load();
@@ -136,5 +138,10 @@ export function toggleUpvote(postId: string) {
 export function toggleGroup(groupId: string) {
   setProfile((p) => ({
     joinedGroups: p.joinedGroups.includes(groupId) ? p.joinedGroups.filter((x) => x !== groupId) : [...p.joinedGroups, groupId],
+  }));
+}
+export function toggleSavedStay(stayId: string) {
+  setProfile((p) => ({
+    savedStays: p.savedStays.includes(stayId) ? p.savedStays.filter((x) => x !== stayId) : [...p.savedStays, stayId],
   }));
 }

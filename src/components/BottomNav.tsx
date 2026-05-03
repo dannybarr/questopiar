@@ -1,10 +1,11 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Compass, Flame, Sparkles, User } from "lucide-react";
+import { Compass, Flame, Sparkles, User, BedDouble } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
   { to: "/quests", label: "Quests", Icon: Sparkles },
   { to: "/active", label: "Active", Icon: Flame },
+  { to: "/stays", label: "Stays", Icon: BedDouble },
   { to: "/discover", label: "Discover", Icon: Compass },
   { to: "/profile", label: "Profile", Icon: User },
 ];
