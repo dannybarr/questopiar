@@ -27,7 +27,7 @@ const img = (q: string, seed: number) =>
 
 export const ACTIVITY_QUESTS: Quest[] = [
   { id: "q-padel-canterbury", title: "Padel Smash", venue: "Padel Hub Canterbury", city: "Canterbury", region: "Kent", lat: 51.2802, lng: 1.0789, category: "active", emoji: "🎾",
-    image: img("1554068865-24cecd4e34b8", 1), blurb: "Two courts. Two friends. One absolute scrap.", description: "Book an hour at Kent's premier padel club. Loud, sweaty, ridiculous. First-timers welcome — rackets are free.", durationMin: 60, points: 120, difficulty: 2, vibes: ["with-mates", "active" as Vibe].slice(0,1).concat(["with-mates"]), bring: ["Trainers", "Water"] },
+    image: img("1554068865-24cecd4e34b8", 1), blurb: "Two courts. Two friends. One absolute scrap.", description: "Book an hour at Kent's premier padel club. Loud, sweaty, ridiculous. First-timers welcome — rackets are free.", durationMin: 60, points: 120, difficulty: 2, vibes: ["with-mates", "cheap"], bring: ["Trainers", "Water"] },
   { id: "q-castle-climb", title: "Send It at The Castle", venue: "The Castle Climbing Centre", city: "Stoke Newington", region: "London", lat: 51.5614, lng: -0.0796, category: "climb", emoji: "🧗",
     image: img("1522163182402-834f871fd851", 2), blurb: "A converted Victorian water pumping station. Now: 450 routes.", description: "Tall walls, lead routes, a bouldering pit and a vegan café. Pay-and-climb for £15.", durationMin: 120, points: 200, difficulty: 3, vibes: ["with-mates", "rainy-day"], bring: ["Climbing shoes (or rent)"] },
   { id: "q-boxhill", title: "Sunrise on Box Hill", venue: "Box Hill Viewpoint", city: "Dorking", region: "Surrey", lat: 51.2519, lng: -0.3098, category: "nature", emoji: "🌄",
