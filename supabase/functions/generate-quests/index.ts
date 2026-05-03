@@ -75,6 +75,36 @@ function computePoints(randomness: number, durationMin: number) {
   return Math.max(30, Math.min(320, Math.round(25 + r * 25 + d / 8)));
 }
 
+function parseQuestArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    const start = value.indexOf("[");
+    const end = value.lastIndexOf("]");
+    if (start >= 0 && end > start) {
+      const parsed = JSON.parse(value.slice(start, end + 1));
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
+  }
+}
+
+function normalizeCategory(category: unknown, imageKeyword = "", vibes: unknown[] = []) {
+  const haystack = [category, imageKeyword, ...vibes].join(" ").toLowerCase();
+  if (CATEGORIES.includes(category as any)) return category as typeof CATEGORIES[number];
+  if (/bar|cocktail|club|speakeasy|night|flight club|bounce|darts/.test(haystack)) return "nightlife";
+  if (/food|restaurant|market|supper|bakery|pub|brewery/.test(haystack)) return "foodie";
+  if (/hike|park|view|garden|wood|trail|nature|walk/.test(haystack)) return "nature";
+  if (/swim|lido|river|canal|water|kayak|sup/.test(haystack)) return "water";
+  if (/climb|boulder/.test(haystack)) return "climb";
+  if (/cycle|bike|skate|ride/.test(haystack)) return "ride";
+  if (/golf|darts|axe|sport|activity|fitness/.test(haystack)) return "active";
+  return "chill";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -116,7 +146,7 @@ Deno.serve(async (req) => {
           properties: {
             questsJson: {
               type: "string",
-              description: "A JSON array string of quest objects. Each object must include title, venue, city, region, address, lat, lng, category, blurb, description, durationMin, randomness, difficulty, vibes, and imageKeyword.",
+              description: "A JSON array string of quest objects. Each object must include title, venue, city, region, address, lat, lng, category, blurb, description, durationMin, randomness, difficulty, vibes, and imageKeyword. Category must be exactly one of: active, chill, foodie, water, climb, ride, nightlife, nature.",
             },
           },
           required: ["questsJson"],
@@ -152,12 +182,10 @@ Return EXACTLY ${count} quests via the return_quests tool. Set questsJson to a v
     const call = questsResp.choices?.[0]?.message?.tool_calls?.[0];
     const args = call ? JSON.parse(call.function.arguments) : { quests: [] };
     let raw = Array.isArray(args.quests) ? args.quests : [];
-    if (!raw.length && typeof args.questsJson === "string") {
-      raw = JSON.parse(args.questsJson);
-    }
+    if (!raw.length) raw = parseQuestArray(args.questsJson);
 
     const quests = raw.map((q, i) => {
-      const cat = CATEGORIES.includes(q.category) ? q.category : "chill";
+      const cat = normalizeCategory(q.category, q.imageKeyword, q.vibes || []);
       const imgKw = q.imageKeyword || `${cat} ${q.venue}`;
       return {
         id: `ai-${Date.now()}-${i}`,
