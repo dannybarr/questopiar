@@ -26,6 +26,7 @@ export interface Profile {
   active: ActiveQuest[];
   upvoted: string[];
   joinedGroups: string[];
+  savedStays: string[];
 }
 
 const KEY = "sidequest:v1";
