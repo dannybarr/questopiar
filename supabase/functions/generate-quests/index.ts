@@ -114,7 +114,6 @@ Deno.serve(async (req) => {
                   vibes: { type: "array", items: { type: "string" } },
                   imageKeyword: { type: "string", description: "1-3 words to fetch a fitting photo (e.g. 'cocktail bar', 'sunrise hike')" },
                 },
-                required: ["title","venue","city","lat","lng","category","blurb","description","durationMin","randomness","difficulty"],
               },
             },
           },
