@@ -1,123 +1,89 @@
-# Side Quest — Build Plan
+# Real-Place LLM Side Quests (Live, Varied, Location-Aware)
 
-A playful, arcade-feel app that turns the UK into a playground. Swipe quests, accept dares, log adventures with friends, build streaks. Demo-only (no login), seeded with rich UK data.
+Replace the static deck with quests generated on demand by an LLM that knows the *character* of the place the user is in, then mixes a wide variety of real venues into the swiper.
 
-## The Vibe
+## Core principles
 
-- **Aesthetic**: Playful & arcade — chunky display type, sticker-style icons, confetti on wins, soft shadows, rounded everything, micro-bounces on every tap.
-- **Palette**: Cream base `#FFF8EE`, ink black `#0E0E12`, electric lime `#C6FF3D` (primary accent), hot coral `#FF5A5F`, sky blue `#3DA9FF`, sunshine `#FFD23F`. Dark surfaces use deep plum `#1A1322`.
-- **Type**: Display — a chunky geometric (Space Grotesk / Bricolage Grotesque) for headlines; Inter for body. Big numerals for points/streak.
-- **Motion**: Spring physics on every interactive element. Swipe cards tilt/scale. Confetti + haptic-style flash on accept. Stamp animation ("QUEST ACCEPTED"). Page transitions slide.
-- **Feel**: Tactile, generous whitespace, sticker-y. Never sterile, never AI-templated.
+1. **Real venues only.** Use Google Gemini via the Lovable AI Gateway with **Google Search grounding** so place names + addresses come from the live web, not hallucinated.
+2. **Location-aware persona.** Before generating quests, the model classifies the area (dense city / coastal town / countryside / market town / national park) and picks the *right* category mix for that place.
+3. **Forced variety.** The prompt requires the result set to span multiple distinct categories — never 8 hikes in a row, never 8 cocktail bars in a row.
+4. **Live + reactive.** Anytime location or radius changes (or the user taps shuffle), a new pull fires. Cached for 30 min per (rounded location, radius) so opens are instant.
 
-## Core Screens
+## The variety system
 
-### 1. Onboarding — "Where's your side quest?"
-- 3 lightweight steps with bouncy progress dots:
-  1. Splash + name ("What should we call you?")
-  2. Avatar picker (8 preset sticker avatars, picked by tapping)
-  3. **Location** — search any UK place (autocomplete from seeded city/area list) OR "Use my current location" (geolocation API, falls back to manual). Distance-radius slider (1–500+ miles, with a fun "no limit" toggle at the end).
-- Finishes with a confetti burst into the swiper.
+The edge function builds the prompt around a **place profile** so the deck feels right for where the user is:
 
-### 2. Quest Suggester (Hero — Tinder-style)
-- Stack of 3 cards visible (back two scaled/offset). Top card is draggable with rotation + opacity feedback.
-- Card content: hero image, sticker badges (category, duration, distance from user, vibe tags like "outdoorsy", "rainy-day", "date-night"), short punchy description, point reward.
-- Drag right = **Accept** (lime stamp + confetti, card flies off, toast "Added to Active Quests"). Drag left = **Skip** (coral X, fades). Drag up = **Save for later**.
-- Tap card → expands to full detail sheet with map preview, what to bring, est. time, "Bring a friend" share button.
-- Filter chip row at top: category (Active, Chill, Foodie, Water, Climb, Ride, Stay), distance, duration. Tap "Shuffle" to reshuffle deck.
-- Empty state: "You've seen them all — widen your radius?" with a slider.
+```text
+Place profile (derived from lat/lng + radius)
+├── Urban dense        → activity bars, hidden cocktail dens, pop-ups, museums late nights,
+│                        rooftop sundowners, supper clubs, comedy basements, lidos
+├── Urban fringe       → city farms, reservoir runs, climbing gyms, food markets, urban hikes
+├── Coastal            → wild swims, surf, fish shacks, pier walks, lighthouse hikes
+├── Cotswolds-style    → village pub crawl, spa day, longbarrow hike, antique trail,
+│                        farm-shop picnic, vineyard tour, fire-pit dinner
+├── National park      → summit hikes, wild camp, stargazing, gorge scrambles, bothy nights
+└── Market town        → market wander, indie cinema, walled-garden pub, river paddle
+```
 
-### 3. Active Quests
-- Vertical feed of accepted quests as colorful cards.
-- Each shows status: **Planned** → **In Progress** (with "Start quest" button → live timer + check-in button) → **Complete** (photo proof upload, rating 1–5 sparkles, share).
-- Completing triggers full-screen celebration: confetti, points popup, streak increment, "Quest Stamped!" passport-style stamp added to profile.
-- Swipe-left on a card to abandon.
+Each profile maps to a **required category spread**. The model must return at least one quest from each required bucket for that profile, plus a few wildcards.
 
-### 4. Discover
-- Mixed feed of community quests + reviews.
-- Each post: user avatar, quest title, photo, short review, upvote (lime arrow with count), comment count.
-- Tap upvote = bouncy +1 animation. Top of feed: "Trending this week" horizontal scroll of hottest quests.
-- Toggle pills: All / Activities / Stays / Groups.
-- Two seeded **open groups** ("Kent Weekenders", "London After Dark") shown as joinable cards with member avatars stack and "Join the chaos" button.
+Examples:
 
-### 5. Profile
-- Top: big avatar, name, current city.
-- **Stats row**: Total Points (big number), Streak (flame icon + days), Quests Completed, Stays Booked.
-- **Streak calendar**: GitHub-style heatmap of last 12 weeks with lime squares.
-- **Passport**: grid of stamp stickers earned per completed quest (rotated slightly, sticker peel effect).
-- **Badges**: unlockables ("First Quest", "5-Day Streak", "Treehouse Sleeper", "Kent Conqueror") — locked ones grayscale.
-- Settings row: edit location/radius, theme toggle, reset demo data.
+- **London (urban dense)**: 1 activity bar (Puttshack / Flight Club / Bounce / Poolhouse style), 1 hidden bar, 1 viewpoint hike (Parliament Hill, Greenwich), 1 museum late, 1 pop-up / supper club, 1 spa or sauna, 1 lido / wild swim, 1 ride/skate, 1 nightlife, 1 wildcard.
+- **Cotswolds**: 2 walks (e.g. Broadway Tower, Cleeve Common), 1 cosy pub with fire, 1 farm-shop / cheese trail, 1 spa (Calcot, Daylesford), 1 vineyard or distillery, 1 antique town wander, 1 stargazing / dark sky, 1 wildcard.
+- **Cornish coast**: surf lesson, coastal path leg, fish shack, lighthouse, sea swim, smugglers' pub, gallery, wildcard.
 
-## Navigation
+This prevents the deck from collapsing into one vibe.
 
-Bottom tab bar (floating, rounded, sticker-style) with 4 tabs: **Quests** (swiper), **Active**, **Discover**, **Profile**. Center "Quests" tab is slightly larger with lime accent. Smooth crossfade between tabs.
+## Points formula
 
-## Seeded Data (≥30 quests, 2 groups)
+```text
+points = round( 25 + (randomness * 25) + (durationMin / 8) )
+clamped 30–320
+```
 
-**20+ activity quests** spread across UK with real place names & coordinates, e.g.:
-- Padel at Padel Hub Canterbury (Kent)
-- Rock climbing at The Castle Climbing Centre (Stoke Newington, London)
-- Sunrise hike at Box Hill (Surrey)
-- Sea swim + chips at Whitstable Beach (Kent)
-- Bike loop around Richmond Park (London)
-- Golf at Princes Golf Club (Sandwich, Kent)
-- Bouldering at Yonder (Walthamstow)
-- Kayaking at Regent's Canal
-- Pitch & putt at Hampstead Heath
-- Surf lesson at Joss Bay (Broadstairs)
-- Wild swimming at Hampstead Ponds
-- Go-karting at TeamSport Tower Bridge
-- Axe throwing at Whistle Punks Vauxhall
-- Roller disco at Flippers Olympia
-- Sunset run along the Thames Path
-- Foraging walk at Epping Forest
-- Ping-pong at Bounce Old Street
-- Skate session at Bay Sixty6
-- Pub crawl on Bermondsey Beer Mile
-- Stargazing at South Downs Dark Sky Reserve
-- (plus extras for Kent: Leeds Castle picnic, Margate Old Town wander, Dover cliffs walk)
+Randomness is a 1–5 score the model assigns: 1 = obvious tourist thing, 5 = "I would never have thought of that". Long *and* random quests pay the most.
 
-**10 stay quests** (UK-wide, real-feeling):
-- Treehouse at Hoots Cabin (Forest of Dean)
-- Houseboat on Regent's Canal (London)
-- Shepherd's hut at Elmley Nature Reserve (Kent)
-- Dome at Brook House Woods (Herefordshire)
-- Lighthouse keeper's cottage (Cornwall)
-- Converted railway carriage (North Yorkshire)
-- Off-grid cabin in Snowdonia
-- Yurt at Loose Reins (Dorset)
-- Float pod on Loch Lomond
-- Cave room at The Beckford Arms cellar suite (Wiltshire)
+## UX flow
 
-**2 open groups**: Kent Weekenders (12 members, active quest: "Coastal pub crawl Saturday"), London After Dark (28 members, active quest: "Soho speakeasy hunt").
+1. Onboarding (existing) captures location + radius.
+2. Quests page calls `useGeneratedQuests(location, radius)`.
+3. While generating: show seeded fallback deck filtered to radius and a small animated chip "Scouting [Town] for side quests…".
+4. When response arrives: prepend generated quests, dedupe by venue+title, keep category filter chips working.
+5. Cache per `round(lat,2)|round(lng,2)|radius` for 30 min. Shuffle button forces refresh. Changing location/radius invalidates and refires automatically.
+6. Detail sheet gains an **Open in Maps** link using the venue address/coords returned by the model.
 
-Each quest has: id, title, category, location (name + lat/lng + city), image, description, duration, points, vibe tags, difficulty.
+## Image strategy
 
-## Distance & Filtering
+- Don't trust LLM image URLs.
+- For each quest, build an Unsplash Source URL from `{category, city, venueKeyword}` (e.g. `https://source.unsplash.com/800x600/?cocktail,bar,soho`). Free, no key, always returns something on-brief.
+- Fallback to existing per-category seeded photos if the network image fails.
+- Future upgrade path noted: swap to Google Places Photos when a paid key is added.
 
-- User location stored in localStorage with radius preference.
-- Haversine distance computed client-side against quest coords.
-- Activities filtered by radius; **stays always national** but sortable by distance.
-- "+5 miles" quick-bump button on empty state; radius slider has no upper cap.
+## Technical plan
 
-## Persistence
+**Backend (new — requires Lovable Cloud)**
+- Edge function `generate-quests`:
+  - Input: `{ lat, lng, radiusMiles, count?: 12 }`
+  - Step 1: ask the model to classify the place profile + name the nearest town(s).
+  - Step 2: ask the model (with Google Search grounding) to return `count` real quests, enforcing the variety spread for that profile. Strict JSON via tool calling.
+  - Server validates, computes points, attaches Unsplash image URLs, returns `{ profile, town, quests }`.
+  - Handles Lovable AI 429 / 402 with clear error messages.
 
-All state in localStorage (no backend): profile, accepted/active/completed quests, streak, points, upvotes, joined groups. "Reset demo data" in settings restores seed.
+**Frontend**
+- `src/lib/api.ts` — `fetchGeneratedQuests(loc, radius)` with localStorage cache + TTL.
+- `src/hooks/useGeneratedQuests.ts` — re-fires on location/radius change, exposes `{ quests, loading, profile, town, refresh }`.
+- `src/pages/Quests.tsx` — merge generated quests in front of seeded deck, show "Scouting Bourton-on-the-Water…" chip while loading, show profile pill ("Cotswolds vibe ✨") once loaded.
+- Extend `Quest` with optional `address`, `source: 'seed' | 'ai'`, `mapsUrl`.
+- Detail sheet: add "Open in Maps" button.
 
-## Technical Notes
+## Out of scope (for this pass)
 
-- Stack: existing React + Vite + Tailwind + shadcn. Add `framer-motion` for swipe physics and page transitions, `canvas-confetti` for celebrations, `react-router-dom` routes per screen.
-- Swiper built custom on framer-motion `drag` with rotate/opacity transforms — no heavy library.
-- Design tokens: extend `index.css` with the new HSL palette, add display font via Google Fonts in `index.html`, extend `tailwind.config.ts` with custom shadows ("sticker": offset hard shadow), keyframes (wiggle, pop, stamp), and font families.
-- Images: use Unsplash source URLs keyed to each quest category for realistic photos.
-- Geolocation via `navigator.geolocation`, reverse-geocoded against a seeded UK city list (no external API needed for demo).
-- Routes: `/onboarding`, `/quests`, `/active`, `/discover`, `/profile`. Root redirects to onboarding if no profile, else `/quests`.
-- File structure: `src/data/quests.ts`, `src/data/stays.ts`, `src/data/groups.ts`, `src/lib/store.ts` (localStorage hooks), `src/lib/geo.ts`, `src/components/quest-card/`, `src/components/swiper/`, `src/components/bottom-nav.tsx`, `src/pages/{Onboarding,Quests,Active,Discover,Profile}.tsx`.
-- Mobile-first; capped at ~480px on desktop with playful gradient backdrop framing the "phone".
+- Real-time opening hours / ticketing.
+- Stays generation (kept seeded — booking flow not in scope).
+- Per-user accounts / cloud-synced cache.
 
-## Out of Scope (v1)
+## What I need from you to confirm before building
 
-- Real auth / multi-user sync
-- Real bookings / payments for stays (CTA shows "Coming soon" toast)
-- Push notifications
-- Real-time group chat (groups show roster + active quest only)
+1. Enable **Lovable Cloud** so the edge function and the AI key live server-side.
+2. OK with **Unsplash category images** for now (swap to Google Places Photos later if you want pixel-perfect venue shots).
