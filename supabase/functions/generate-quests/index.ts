@@ -24,13 +24,13 @@ const PROFILE_GUIDES: Record<string, string> = {
   market_town: "market town. Mix market wanders, indie cinemas, walled-garden pubs, river paddles, antique trails, supper clubs, short walks, craft brewery visits.",
 };
 
-async function callAI(messages: any[], tools?: any[], tool_choice?: any) {
+async function callAI(messages: any[]) {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) throw new Error("LOVABLE_API_KEY missing");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages, ...(tools ? { tools, tool_choice } : {}) }),
+    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -39,31 +39,16 @@ async function callAI(messages: any[], tools?: any[], tool_choice?: any) {
   return res.json();
 }
 
-const CATEGORY_TAGS: Record<string, string> = {
-  active: "sport,fitness,activity",
-  chill: "cozy,relax,lounge",
-  foodie: "restaurant,food,dining",
-  water: "water,swimming,beach",
+const CATEGORY_FALLBACK_TAGS: Record<string, string> = {
+  active: "sport,activity-bar",
+  chill: "cozy,lounge",
+  foodie: "restaurant,food",
+  water: "swimming,water",
   climb: "climbing,bouldering",
   ride: "cycling,skateboarding",
-  nightlife: "bar,nightlife,cocktail",
-  nature: "landscape,nature,outdoors",
+  nightlife: "cocktail,bar",
+  nature: "landscape,nature",
 };
-
-function imageFor(category: string, _city: string, venue: string, imageKeyword?: string) {
-  // Use the model's imageKeyword (most specific) + category tags for reliable, on-brief photos.
-  const kw = (imageKeyword || venue || category)
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, "")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 3)
-    .join(",");
-  const tags = [kw, CATEGORY_TAGS[category] || category].filter(Boolean).join(",");
-  // Loremflickr returns a real Flickr photo matching the tags. Seeded so each quest is stable.
-  const seed = Math.abs([...(venue || kw)].reduce((a, c) => a + c.charCodeAt(0), 0));
-  return `https://loremflickr.com/900/700/${encodeURIComponent(tags)}?lock=${seed}`;
-}
 
 function emojiFor(c: string) {
   return ({active:"💪",chill:"🌿",foodie:"🍻",water:"🌊",climb:"🧗",ride:"🚴",nightlife:"🌃",nature:"🌄"} as any)[c] || "✨";
@@ -84,11 +69,22 @@ function parseQuestArray(value: unknown): any[] {
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.quests)) return parsed.quests;
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    const start = value.indexOf("[");
-    const end = value.lastIndexOf("]");
-    if (start >= 0 && end > start) {
-      const parsed = JSON.parse(value.slice(start, end + 1));
-      return Array.isArray(parsed) ? parsed : [];
+    const objStart = value.indexOf("{");
+    const objEnd = value.lastIndexOf("}");
+    if (objStart >= 0 && objEnd > objStart) {
+      try {
+        const parsed = JSON.parse(value.slice(objStart, objEnd + 1));
+        if (parsed && Array.isArray(parsed.quests)) return parsed.quests;
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    const arrStart = value.indexOf("[");
+    const arrEnd = value.lastIndexOf("]");
+    if (arrStart >= 0 && arrEnd > arrStart) {
+      try {
+        const parsed = JSON.parse(value.slice(arrStart, arrEnd + 1));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {}
     }
     return [];
   }
@@ -107,6 +103,117 @@ function normalizeCategory(category: unknown, imageKeyword = "", vibes: unknown[
   return "chill";
 }
 
+// ============ Image resolution ============
+
+const imageCache = new Map<string, string>();
+
+async function safeFetch(url: string, init: RequestInit = {}, timeoutMs = 2500): Promise<Response | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: ctrl.signal,
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; SideQuestBot/1.0; +https://lovable.dev)",
+        ...(init.headers || {}),
+      },
+    });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function absolutize(maybeUrl: string, base: string): string | null {
+  try { return new URL(maybeUrl, base).toString(); } catch { return null; }
+}
+
+async function ogImageFromSite(siteUrl: string): Promise<string | null> {
+  const res = await safeFetch(siteUrl, { headers: { Accept: "text/html,*/*" } }, 3000);
+  if (!res || !res.ok) return null;
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return null;
+  const html = (await res.text()).slice(0, 250_000);
+  const patterns = [
+    /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i,
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m && m[1]) {
+      const abs = absolutize(m[1].trim(), siteUrl);
+      if (abs) return abs;
+    }
+  }
+  return null;
+}
+
+async function wikiImage(title: string): Promise<string | null> {
+  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/\s+/g, "_"))}`;
+  const res = await safeFetch(url, { headers: { Accept: "application/json" } }, 2500);
+  if (!res || !res.ok) return null;
+  try {
+    const j = await res.json();
+    const src: string | undefined = j?.originalimage?.source || j?.thumbnail?.source;
+    return src || null;
+  } catch { return null; }
+}
+
+async function validateImage(url: string): Promise<boolean> {
+  const res = await safeFetch(url, { method: "HEAD" }, 2000);
+  if (!res || !res.ok) return false;
+  const ct = res.headers.get("content-type") || "";
+  return ct.startsWith("image/");
+}
+
+function unsplashFallback(category: string, venue: string, imageQuery?: string): string {
+  const tags = [imageQuery, CATEGORY_FALLBACK_TAGS[category] || category]
+    .filter(Boolean)
+    .join(",")
+    .replace(/\s+/g, "-");
+  const sig = Math.abs([...(venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0)) % 100000;
+  return `https://source.unsplash.com/featured/900x700/?${encodeURIComponent(tags)}&sig=${sig}`;
+}
+
+async function resolveImage(q: any, category: string): Promise<string> {
+  const cacheKey = `${q.venue || ""}|${q.city || ""}`;
+  const cached = imageCache.get(cacheKey);
+  if (cached) return cached;
+
+  // 1. Official site og:image
+  if (q.websiteUrl && typeof q.websiteUrl === "string" && /^https?:\/\//.test(q.websiteUrl)) {
+    try {
+      const og = await ogImageFromSite(q.websiteUrl);
+      if (og && await validateImage(og)) {
+        imageCache.set(cacheKey, og);
+        return og;
+      }
+    } catch {}
+  }
+
+  // 2. Wikipedia
+  if (q.wikipediaTitle && typeof q.wikipediaTitle === "string") {
+    try {
+      const wiki = await wikiImage(q.wikipediaTitle);
+      if (wiki) {
+        imageCache.set(cacheKey, wiki);
+        return wiki;
+      }
+    } catch {}
+  }
+
+  // 3. Unsplash fallback
+  const fb = unsplashFallback(category, q.venue || "", q.imageQuery || q.imageKeyword);
+  imageCache.set(cacheKey, fb);
+  return fb;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -117,12 +224,10 @@ Deno.serve(async (req) => {
     }
 
     // Step 1: classify place + name town
-    const profileResp = await callAI(
-      [
-        { role: "system", content: "You classify UK locations. Reply ONLY with JSON {\"profile\":one of [urban_dense,urban_fringe,coastal,countryside,national_park,market_town], \"town\":string, \"region\":string}. No prose." },
-        { role: "user", content: `Coords ${lat},${lng}${locationName ? ` (user said: ${locationName})` : ""}. Classify the area within ~${radiusMiles} miles.` },
-      ],
-    );
+    const profileResp = await callAI([
+      { role: "system", content: "You classify UK locations. Reply ONLY with JSON {\"profile\":one of [urban_dense,urban_fringe,coastal,countryside,national_park,market_town], \"town\":string, \"region\":string}. No prose." },
+      { role: "user", content: `Coords ${lat},${lng}${locationName ? ` (user said: ${locationName})` : ""}. Classify the area within ~${radiusMiles} miles.` },
+    ]);
     let profile = "urban_fringe", town = locationName || "your area", region = "UK";
     try {
       const txt = profileResp.choices?.[0]?.message?.content || "";
@@ -137,26 +242,25 @@ Deno.serve(async (req) => {
 
     const guide = PROFILE_GUIDES[profile];
 
-    // Step 2: generate quests as plain JSON. Avoid tool schemas because Gemini rejects nested required lists intermittently.
     const sys = `You are a UK local-adventure curator who knows real venues. The user is near ${town}, ${region} (${lat},${lng}), within ${radiusMiles} miles. Area type: ${profile} — ${guide}
 
 RULES:
 - Use ONLY real, currently-operating venues you are confident exist.
 - Maximise VARIETY: spread across at least 5 different categories. Never repeat the same vibe twice in a row.
 - Mix iconic with hidden-gem.
-- Each must be doable today/this week.
 - Approximate lat/lng of the venue.
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
-Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"imageKeyword":""}]}.
+- For each quest, ALWAYS include the venue's official website URL (websiteUrl) so we can fetch its real photo. If the venue is a landmark/museum/park with a Wikipedia page, also include wikipediaTitle.
+- imageQuery: a precise 3-5 word visual description of THIS specific venue (e.g. "neon mini golf interior", "candlelit speakeasy cocktail bar", "Hampstead Heath viewpoint sunset").
+
+Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"websiteUrl":"https://...","wikipediaTitle":"","imageQuery":""}]}.
 Return EXACTLY ${count} quests.`;
 
-    const questsResp = await callAI(
-      [
-        { role: "system", content: sys },
-        { role: "user", content: `Give me ${count} varied side quests near ${town}.` },
-      ],
-    );
+    const questsResp = await callAI([
+      { role: "system", content: sys },
+      { role: "user", content: `Give me ${count} varied side quests near ${town}.` },
+    ]);
 
     if (questsResp.error || questsResp.choices?.[0]?.finish_reason === "error") {
       throw new Error(JSON.stringify(questsResp));
@@ -166,9 +270,9 @@ Return EXACTLY ${count} quests.`;
     const raw = parseQuestArray(content);
     if (!raw.length) throw new Error("AI returned no usable quests. Please try again.");
 
-    const quests = raw.map((q, i) => {
-      const cat = normalizeCategory(q.category, q.imageKeyword, q.vibes || []);
-      const imgKw = q.imageKeyword || `${cat} ${q.venue}`;
+    const withImages = await Promise.all(raw.map(async (q, i) => {
+      const cat = normalizeCategory(q.category, q.imageQuery || q.imageKeyword, q.vibes || []);
+      const image = await resolveImage(q, cat);
       return {
         id: `ai-${Date.now()}-${i}`,
         title: q.title || q.venue || "Local side quest",
@@ -180,7 +284,8 @@ Return EXACTLY ${count} quests.`;
         lng: typeof q.lng === "number" ? q.lng : lng,
         category: cat,
         emoji: emojiFor(cat),
-        image: imageFor(cat, q.city || town, q.venue || "", imgKw),
+        image,
+        websiteUrl: q.websiteUrl,
         blurb: q.blurb || `A real-world ${cat} quest near ${town}.`,
         description: q.description || `Head to ${q.venue || "this local spot"} for a varied side quest in the area. Check opening times before you go.`,
         durationMin: typeof q.durationMin === "number" ? q.durationMin : 90,
@@ -189,11 +294,11 @@ Return EXACTLY ${count} quests.`;
         points: computePoints(q.randomness, q.durationMin),
         vibes: q.vibes || [],
         source: "ai",
-        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q.venue + ", " + (q.city||town))}`,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((q.venue || "") + ", " + (q.city||town))}`,
       };
-    });
+    }));
 
-    return new Response(JSON.stringify({ profile, town, region, quests }), {
+    return new Response(JSON.stringify({ profile, town, region, quests: withImages }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
