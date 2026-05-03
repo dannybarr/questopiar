@@ -77,9 +77,11 @@ function computePoints(randomness: number, durationMin: number) {
 
 function parseQuestArray(value: unknown): any[] {
   if (Array.isArray(value)) return value;
+  if (value && typeof value === "object" && Array.isArray((value as any).quests)) return (value as any).quests;
   if (typeof value !== "string") return [];
   try {
     const parsed = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.quests)) return parsed.quests;
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     const start = value.indexOf("[");
@@ -135,25 +137,7 @@ Deno.serve(async (req) => {
 
     const guide = PROFILE_GUIDES[profile];
 
-    // Step 2: generate quests via tool calling
-    const tools = [{
-      type: "function",
-      function: {
-        name: "return_quests",
-        description: "Return a varied list of real local Side Quests.",
-        parameters: {
-          type: "object",
-          properties: {
-            questsJson: {
-              type: "string",
-              description: "A JSON array string of quest objects. Each object must include title, venue, city, region, address, lat, lng, category, blurb, description, durationMin, randomness, difficulty, vibes, and imageKeyword. Category must be exactly one of: active, chill, foodie, water, climb, ride, nightlife, nature.",
-            },
-          },
-          required: ["questsJson"],
-        },
-      },
-    }];
-
+    // Step 2: generate quests as plain JSON. Avoid tool schemas because Gemini rejects nested required lists intermittently.
     const sys = `You are a UK local-adventure curator who knows real venues. The user is near ${town}, ${region} (${lat},${lng}), within ${radiusMiles} miles. Area type: ${profile} — ${guide}
 
 RULES:
@@ -164,29 +148,22 @@ RULES:
 - Approximate lat/lng of the venue.
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
-Return EXACTLY ${count} quests via the return_quests tool. Set questsJson to a valid JSON array string only.`;
+Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"imageKeyword":""}]}.
+Return EXACTLY ${count} quests.`;
 
     const questsResp = await callAI(
       [
         { role: "system", content: sys },
         { role: "user", content: `Give me ${count} varied side quests near ${town}.` },
       ],
-      tools,
-      { type: "function", function: { name: "return_quests" } },
     );
 
     if (questsResp.error || questsResp.choices?.[0]?.finish_reason === "error") {
       throw new Error(JSON.stringify(questsResp));
     }
 
-    const call = questsResp.choices?.[0]?.message?.tool_calls?.[0];
-    const args = call ? JSON.parse(call.function.arguments) : { quests: [] };
-    let raw = Array.isArray(args.quests) ? args.quests : [];
-    if (!raw.length) raw = parseQuestArray(args.questsJson);
-    if (!raw.length) {
-      const content = questsResp.choices?.[0]?.message?.content || "";
-      raw = parseQuestArray(content);
-    }
+    const content = questsResp.choices?.[0]?.message?.content || "";
+    const raw = parseQuestArray(content);
     if (!raw.length) throw new Error("AI returned no usable quests. Please try again.");
 
     const quests = raw.map((q, i) => {
