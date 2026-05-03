@@ -183,6 +183,11 @@ Return EXACTLY ${count} quests via the return_quests tool. Set questsJson to a v
     const args = call ? JSON.parse(call.function.arguments) : { quests: [] };
     let raw = Array.isArray(args.quests) ? args.quests : [];
     if (!raw.length) raw = parseQuestArray(args.questsJson);
+    if (!raw.length) {
+      const content = questsResp.choices?.[0]?.message?.content || "";
+      raw = parseQuestArray(content);
+    }
+    if (!raw.length) throw new Error("AI returned no usable quests. Please try again.");
 
     const quests = raw.map((q, i) => {
       const cat = normalizeCategory(q.category, q.imageKeyword, q.vibes || []);
