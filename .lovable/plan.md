@@ -1,31 +1,49 @@
-## Fix duplicate quest images — fetch real venue photos
+## Goal
+Replace the small hardcoded UK place list with a fully comprehensive UK-wide search, and make "Use current location" actually resolve to a real place name (reverse geocoding) instead of snapping to one of ~27 seeded towns.
 
-### Problem
-Every quest card shows the same image because `loremflickr.com` is unreliable and falls back to a default when its tag index doesn't match.
+## Recommended provider: Nominatim (OpenStreetMap)
+- **Free, no API key, no signup** — ideal for Lovable Cloud.
+- Covers every UK city, town, village, postcode, neighbourhood, landmark.
+- Supports both forward search (typeahead) and reverse geocoding (lat/lng → place).
+- Usage policy requires a descriptive User-Agent and ≤1 req/sec — we satisfy both by routing through an edge function with debounce.
 
-### Solution
-Replace tag-based stock images with a real-image cascade per venue.
+Alternatives considered:
+- **Mapbox / Google Places**: better UX but require API keys + billing setup. Overkill here.
+- **postcodes.io**: UK-only and excellent, but postcode-focused (no "Shoreditch" / "Peak District" style search).
 
-### Changes — `supabase/functions/generate-quests/index.ts`
+Going with Nominatim. We can swap to Mapbox later if rate limits ever bite.
 
-1. **Extend the AI JSON schema** to include per-venue grounding:
-   - `websiteUrl` — the venue's official site
-   - `wikipediaTitle` — for landmarks/parks/museums
-   - `imageQuery` — precise visual description (final fallback only)
+## Changes
 
-2. **Add an image resolver** with a 3-step cascade, run in parallel for all quests with per-fetch timeouts (2.5–3s) so slow venue sites never block the response:
-   1. **Official site og:image** — fetch the venue's homepage, regex-parse `og:image` / `twitter:image`, absolutize relative URLs, validate via HEAD request (must return `image/*`). This gives the actual venue photo (Puttshack neon, Flight Club oches, spa pools, etc.).
-   2. **Wikipedia REST summary** — `en.wikipedia.org/api/rest_v1/page/summary/{title}` → `originalimage.source` (or upgraded thumbnail). Perfect for Parliament Hill, Tate, Kew.
-   3. **Unsplash Source featured** — `source.unsplash.com/featured/900x700/?<imageQuery>,<categoryTags>&sig=<venueHash>`. Per-venue `sig` guarantees variety even when tags repeat.
+### 1. New edge function `geocode` (`supabase/functions/geocode/index.ts`)
+Thin proxy to Nominatim so we control User-Agent, caching, and can swap providers later.
+- `GET ?q=<text>` → forward search, `countrycodes=gb`, `limit=8`, returns `[{name, region, lat, lng}]`
+- `GET ?lat=<>&lng=<>` → reverse geocode, returns single `{name, region, lat, lng}`
+- Maps Nominatim address fields to a friendly name (prefer `village`/`town`/`city`/`suburb`/`neighbourhood`) and region (`county`/`state_district`/`state`).
+- 5-minute in-memory LRU cache keyed by query string to soften repeat calls.
+- CORS headers, `verify_jwt = false` (public endpoint).
+- Registered automatically — no `config.toml` change needed.
 
-3. **In-memory cache** (`Map<venueKey, url>`) inside the module to avoid refetching on warm invocations.
+### 2. Onboarding search UX (`src/pages/Onboarding.tsx`)
+- Replace `UK_PLACES.filter(...)` with debounced (250 ms) call to `supabase.functions.invoke('geocode', { body: { q } })`.
+- Show a small spinner in the input while loading; show "No matches" when empty.
+- Keep the existing result-row styling (name + region chevron).
+- On select: store `{name, region, lat, lng}` exactly as today — downstream code (`useGeneratedQuests`, quests feed) already accepts arbitrary lat/lng.
 
-4. **Remove Loremflickr entirely** — the root cause of the duplicates.
+### 3. Live "Use current location"
+- Keep `navigator.geolocation.getCurrentPosition` but on success call the new `geocode` function with `{lat, lng}`.
+- Set `place` to the real reverse-geocoded result (e.g. "Tunbridge Wells, Kent") instead of "Near me".
+- Improve error handling: distinct toasts for permission denied vs timeout vs unavailable; raise timeout to 10 s and `enableHighAccuracy: true`.
+- Show a subtle loading state on the button while resolving.
 
-5. **Pass `websiteUrl` through** to the response so the detail sheet can link to the official site too.
+### 4. Keep `UK_PLACES` as a tiny offline fallback
+- If the geocode function fails (offline / 5xx), fall back to filtering the existing seeded list so search never appears broken.
 
-### No frontend changes needed
-`QuestCard` and `QuestDetailSheet` already consume `quest.image`.
+## Out of scope
+- No map rendering — search + reverse geocode only. Adding a visual map can come later if you want.
+- No changes to quest generation, radius slider, or storage shape.
 
-### Deploy
-After editing, redeploy `generate-quests` and test with a London coordinate to confirm varied, venue-accurate images.
+## Technical notes
+- Nominatim endpoint: `https://nominatim.openstreetmap.org/search` and `/reverse`, `format=jsonv2`.
+- User-Agent header set to `SideQuest/1.0 (lovable.app)` per their policy.
+- Debounce implemented with a `setTimeout` ref; abort in-flight requests via `AbortController` when the query changes.
