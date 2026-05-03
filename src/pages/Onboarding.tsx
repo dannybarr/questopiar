@@ -19,26 +19,69 @@ export default function Onboarding() {
   const [radius, setRadius] = useState(profile.radiusMiles || 25);
   const [noLimit, setNoLimit] = useState(false);
 
-  const matches = query.trim()
-    ? UK_PLACES.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
-    : [];
+  const [matches, setMatches] = useState<UKPlace[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const debounceRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+    if (q.length < 2) { setMatches([]); setSearching(false); return; }
+    setSearching(true);
+    debounceRef.current = window.setTimeout(async () => {
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      try {
+        const { data, error } = await supabase.functions.invoke("geocode", { body: { q } });
+        if (ctrl.signal.aborted) return;
+        if (error) throw error;
+        const results = (data?.results || []) as UKPlace[];
+        if (results.length) setMatches(results);
+        else setMatches(UK_PLACES.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())).slice(0, 6));
+      } catch {
+        setMatches(UK_PLACES.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())).slice(0, 6));
+      } finally {
+        if (!ctrl.signal.aborted) setSearching(false);
+      }
+    }, 250);
+  }, [query]);
 
   const useGeo = () => {
-    if (!navigator.geolocation) return toast("Geolocation not available");
+    if (!navigator.geolocation) return toast("Geolocation not available on this device");
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // snap to nearest seeded place
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
-        let best = UK_PLACES[0]; let bestD = Infinity;
-        for (const p of UK_PLACES) {
-          const d = Math.hypot(p.lat - latitude, p.lng - longitude);
-          if (d < bestD) { bestD = d; best = p; }
+        try {
+          const { data, error } = await supabase.functions.invoke("geocode", {
+            body: { lat: latitude, lng: longitude },
+          });
+          if (error) throw error;
+          const p = (data?.place as UKPlace | null) ?? null;
+          if (p) {
+            setPlace(p);
+            toast(`Location set: ${p.name}${p.region ? `, ${p.region}` : ""}`);
+          } else {
+            setPlace({ name: "Near me", region: "", lat: latitude, lng: longitude });
+            toast("Location set");
+          }
+        } catch {
+          setPlace({ name: "Near me", region: "", lat: latitude, lng: longitude });
+          toast("Got your location (couldn't fetch place name)");
+        } finally {
+          setLocating(false);
         }
-        setPlace({ name: "Near me", region: best.region, lat: latitude, lng: longitude });
-        toast(`Location set near ${best.name}`);
       },
-      () => toast("Couldn't get location — pick one below."),
-      { enableHighAccuracy: false, timeout: 5000 },
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) toast("Location permission denied");
+        else if (err.code === err.TIMEOUT) toast("Location request timed out");
+        else toast("Couldn't get location — pick one below.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   };
 
