@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { UK_PLACES, AVATARS, UKPlace } from "@/data/places";
 import { setProfile, useProfile } from "@/lib/store";
 import { celebrate } from "@/lib/confetti";
-import { MapPin, Search, ChevronRight, Sparkles, LocateFixed } from "lucide-react";
+import { MapPin, Search, ChevronRight, Sparkles, LocateFixed, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Onboarding() {
   const profile = useProfile();
