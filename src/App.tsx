@@ -9,6 +9,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Quests from "./pages/Quests.tsx";
 import Active from "./pages/Active.tsx";
 import Discover from "./pages/Discover.tsx";
+import Stays from "./pages/Stays.tsx";
 import Profile from "./pages/Profile.tsx";
 
 const queryClient = new QueryClient();
