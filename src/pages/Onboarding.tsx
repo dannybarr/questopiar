@@ -185,7 +185,7 @@ export default function Onboarding() {
 
             {place && (
               <div className="mt-4 rounded-2xl border-2 border-foreground bg-sun p-4 shadow-sticker-sm">
-                <div className="flex items-center gap-2 font-display text-lg"><MapPin className="h-5 w-5"/> {place.name}, {place.region}</div>
+                <div className="flex items-center gap-2 font-display text-lg"><MapPin className="h-5 w-5"/> {place.name}{place.region ? `, ${place.region}` : ""}</div>
 
                 <div className="mt-4 flex items-center justify-between">
                   <span className="font-display text-2xl">{noLimit ? "∞" : `${radius} mi`}</span>
