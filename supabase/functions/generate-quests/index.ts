@@ -75,6 +75,38 @@ function computePoints(randomness: number, durationMin: number) {
   return Math.max(30, Math.min(320, Math.round(25 + r * 25 + d / 8)));
 }
 
+function parseQuestArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object" && Array.isArray((value as any).quests)) return (value as any).quests;
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.quests)) return parsed.quests;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    const start = value.indexOf("[");
+    const end = value.lastIndexOf("]");
+    if (start >= 0 && end > start) {
+      const parsed = JSON.parse(value.slice(start, end + 1));
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
+  }
+}
+
+function normalizeCategory(category: unknown, imageKeyword = "", vibes: unknown[] = []) {
+  const haystack = [category, imageKeyword, ...vibes].join(" ").toLowerCase();
+  if (CATEGORIES.includes(category as any)) return category as typeof CATEGORIES[number];
+  if (/bar|cocktail|club|speakeasy|night|flight club|bounce|darts/.test(haystack)) return "nightlife";
+  if (/food|restaurant|market|supper|bakery|pub|brewery/.test(haystack)) return "foodie";
+  if (/hike|park|view|garden|wood|trail|nature|walk/.test(haystack)) return "nature";
+  if (/swim|lido|river|canal|water|kayak|sup/.test(haystack)) return "water";
+  if (/climb|boulder/.test(haystack)) return "climb";
+  if (/cycle|bike|skate|ride/.test(haystack)) return "ride";
+  if (/golf|darts|axe|sport|activity|fitness/.test(haystack)) return "active";
+  return "chill";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -105,45 +137,7 @@ Deno.serve(async (req) => {
 
     const guide = PROFILE_GUIDES[profile];
 
-    // Step 2: generate quests via tool calling
-    const tools = [{
-      type: "function",
-      function: {
-        name: "return_quests",
-        description: "Return a varied list of real local Side Quests.",
-        parameters: {
-          type: "object",
-          properties: {
-            quests: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string", description: "Short playful quest title (max 40 chars)" },
-                  venue: { type: "string", description: "Real venue / place name" },
-                  city: { type: "string" },
-                  region: { type: "string" },
-                  address: { type: "string" },
-                  lat: { type: "number" },
-                  lng: { type: "number" },
-                  category: { type: "string", enum: [...CATEGORIES] },
-                  blurb: { type: "string", description: "One punchy sentence" },
-                  description: { type: "string", description: "2-3 sentences with practical detail (price, how long, what to bring)" },
-                  durationMin: { type: "number" },
-                  randomness: { type: "number", description: "1=obvious, 5=wonderfully unexpected" },
-                  difficulty: { type: "number", enum: [1,2,3] },
-                  vibes: { type: "array", items: { type: "string" } },
-                  imageKeyword: { type: "string", description: "1-3 words to fetch a fitting photo (e.g. 'cocktail bar', 'sunrise hike')" },
-                },
-                required: ["title","venue","city","category","blurb","description","durationMin","randomness","difficulty","lat","lng","imageKeyword"],
-              },
-            },
-          },
-          required: ["quests"],
-        },
-      },
-    }];
-
+    // Step 2: generate quests as plain JSON. Avoid tool schemas because Gemini rejects nested required lists intermittently.
     const sys = `You are a UK local-adventure curator who knows real venues. The user is near ${town}, ${region} (${lat},${lng}), within ${radiusMiles} miles. Area type: ${profile} — ${guide}
 
 RULES:
@@ -154,45 +148,44 @@ RULES:
 - Approximate lat/lng of the venue.
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
-Return EXACTLY ${count} quests via the return_quests tool.`;
+Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"imageKeyword":""}]}.
+Return EXACTLY ${count} quests.`;
 
     const questsResp = await callAI(
       [
         { role: "system", content: sys },
         { role: "user", content: `Give me ${count} varied side quests near ${town}.` },
       ],
-      tools,
-      { type: "function", function: { name: "return_quests" } },
     );
 
     if (questsResp.error || questsResp.choices?.[0]?.finish_reason === "error") {
       throw new Error(JSON.stringify(questsResp));
     }
 
-    const call = questsResp.choices?.[0]?.message?.tool_calls?.[0];
-    const args = call ? JSON.parse(call.function.arguments) : { quests: [] };
-    const raw = (args.quests || []) as any[];
+    const content = questsResp.choices?.[0]?.message?.content || "";
+    const raw = parseQuestArray(content);
+    if (!raw.length) throw new Error("AI returned no usable quests. Please try again.");
 
     const quests = raw.map((q, i) => {
-      const cat = CATEGORIES.includes(q.category) ? q.category : "chill";
+      const cat = normalizeCategory(q.category, q.imageKeyword, q.vibes || []);
       const imgKw = q.imageKeyword || `${cat} ${q.venue}`;
       return {
         id: `ai-${Date.now()}-${i}`,
-        title: q.title,
-        venue: q.venue,
+        title: q.title || q.venue || "Local side quest",
+        venue: q.venue || q.title || "Nearby place",
         city: q.city || town,
         region: q.region || region,
         address: q.address,
-        lat: q.lat,
-        lng: q.lng,
+        lat: typeof q.lat === "number" ? q.lat : lat,
+        lng: typeof q.lng === "number" ? q.lng : lng,
         category: cat,
         emoji: emojiFor(cat),
         image: imageFor(cat, q.city || town, q.venue || "", imgKw),
-        blurb: q.blurb,
-        description: q.description,
-        durationMin: q.durationMin,
-        difficulty: q.difficulty,
-        randomness: q.randomness,
+        blurb: q.blurb || `A real-world ${cat} quest near ${town}.`,
+        description: q.description || `Head to ${q.venue || "this local spot"} for a varied side quest in the area. Check opening times before you go.`,
+        durationMin: typeof q.durationMin === "number" ? q.durationMin : 90,
+        difficulty: typeof q.difficulty === "number" ? q.difficulty : 1,
+        randomness: typeof q.randomness === "number" ? q.randomness : 3,
         points: computePoints(q.randomness, q.durationMin),
         vibes: q.vibes || [],
         source: "ai",
