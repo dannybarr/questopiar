@@ -45,6 +45,7 @@ const initial: Profile = {
   active: [],
   upvoted: [],
   joinedGroups: [],
+  savedStays: [],
 };
 
 let state: Profile = load();
