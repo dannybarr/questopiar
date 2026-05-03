@@ -163,20 +163,24 @@ export default function Onboarding() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search UK city or area"
-                className="w-full rounded-2xl border-2 border-foreground bg-card py-3 pl-10 pr-4 font-semibold shadow-sticker-sm outline-none"
+                placeholder="Search any UK place, town or postcode"
+                className="w-full rounded-2xl border-2 border-foreground bg-card py-3 pl-10 pr-10 font-semibold shadow-sticker-sm outline-none"
               />
+              {searching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin opacity-70"/>}
             </div>
             {matches.length > 0 && (
               <div className="mt-2 space-y-1.5">
-                {matches.map((p) => (
-                  <button key={p.name} onClick={() => { setPlace(p); setQuery(p.name); }}
+                {matches.map((p, i) => (
+                  <button key={`${p.name}-${p.lat}-${i}`} onClick={() => { setPlace(p); setQuery(p.name); setMatches([]); }}
                     className="flex w-full items-center justify-between rounded-xl border-2 border-foreground bg-card px-3 py-2 text-left shadow-sticker-sm sticker-tap">
-                    <span><span className="font-bold">{p.name}</span> <span className="text-xs text-muted-foreground">{p.region}</span></span>
+                    <span><span className="font-bold">{p.name}</span> {p.region && <span className="text-xs text-muted-foreground">{p.region}</span>}</span>
                     <ChevronRight className="h-4 w-4"/>
                   </button>
                 ))}
               </div>
+            )}
+            {!searching && query.trim().length >= 2 && matches.length === 0 && (
+              <div className="mt-2 rounded-xl border-2 border-dashed border-foreground/30 bg-card px-3 py-2 text-sm text-muted-foreground">No matches — try a different spelling.</div>
             )}
 
             {place && (
