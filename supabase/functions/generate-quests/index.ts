@@ -114,31 +114,12 @@ Deno.serve(async (req) => {
         parameters: {
           type: "object",
           properties: {
-            quests: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string", description: "Short playful quest title (max 40 chars)" },
-                  venue: { type: "string", description: "Real venue / place name" },
-                  city: { type: "string" },
-                  region: { type: "string" },
-                  address: { type: "string" },
-                  lat: { type: "number" },
-                  lng: { type: "number" },
-                  category: { type: "string", enum: [...CATEGORIES] },
-                  blurb: { type: "string", description: "One punchy sentence" },
-                  description: { type: "string", description: "2-3 sentences with practical detail (price, how long, what to bring)" },
-                  durationMin: { type: "number" },
-                  randomness: { type: "number", description: "1=obvious, 5=wonderfully unexpected" },
-                  difficulty: { type: "number", enum: [1,2,3] },
-                  vibes: { type: "array", items: { type: "string" } },
-                  imageKeyword: { type: "string", description: "1-3 words to fetch a fitting photo (e.g. 'cocktail bar', 'sunrise hike')" },
-                },
-              },
+            questsJson: {
+              type: "string",
+              description: "A JSON array string of quest objects. Each object must include title, venue, city, region, address, lat, lng, category, blurb, description, durationMin, randomness, difficulty, vibes, and imageKeyword.",
             },
           },
-          required: ["quests"],
+          required: ["questsJson"],
         },
       },
     }];
@@ -153,7 +134,7 @@ RULES:
 - Approximate lat/lng of the venue.
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
-Return EXACTLY ${count} quests via the return_quests tool.`;
+Return EXACTLY ${count} quests via the return_quests tool. Set questsJson to a valid JSON array string only.`;
 
     const questsResp = await callAI(
       [
@@ -170,7 +151,10 @@ Return EXACTLY ${count} quests via the return_quests tool.`;
 
     const call = questsResp.choices?.[0]?.message?.tool_calls?.[0];
     const args = call ? JSON.parse(call.function.arguments) : { quests: [] };
-    const raw = (args.quests || []) as any[];
+    let raw = Array.isArray(args.quests) ? args.quests : [];
+    if (!raw.length && typeof args.questsJson === "string") {
+      raw = JSON.parse(args.questsJson);
+    }
 
     const quests = raw.map((q, i) => {
       const cat = CATEGORIES.includes(q.category) ? q.category : "chill";
