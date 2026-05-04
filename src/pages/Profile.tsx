@@ -150,6 +150,13 @@ export default function ProfilePage() {
           <RotateCcw className="mr-1 inline h-4 w-4"/> Reset demo
         </button>
       </section>
+
+      <MemorySheet
+        open={!!memoryQuestId}
+        onOpenChange={(o) => !o && setMemoryQuestId(null)}
+        quest={memoryQuestId ? ALL_QUESTS.find((q) => q.id === memoryQuestId) ?? null : null}
+        active={memoryQuestId ? profile.active.find((a) => a.questId === memoryQuestId) ?? null : null}
+      />
     </AppShell>
   );
 }
