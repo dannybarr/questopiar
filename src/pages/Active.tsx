@@ -1,109 +1,84 @@
 import { useState } from "react";
-import { AppShell } from "@/components/AppShell";
-import { useProfile, startQuest, completeQuest, abandonQuest, ActiveQuest } from "@/lib/store";
-import { ALL_QUESTS } from "@/data/quests";
-import { formatDuration } from "@/lib/geo";
-import { celebrate } from "@/lib/confetti";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Check, Trash2, Sparkles, Star } from "lucide-react";
-import { toast } from "sonner";
+import { Star, Sparkles } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { QuestJournalCard } from "@/components/QuestJournalCard";
+import { SavedQuestRow } from "@/components/SavedQuestRow";
+import { MemorySheet } from "@/components/MemorySheet";
+import { useProfile } from "@/lib/store";
+import { ALL_QUESTS } from "@/data/quests";
+import type { Quest } from "@/data/quests";
 
 export default function ActivePage() {
   const profile = useProfile();
   const [celebrating, setCelebrating] = useState<{ title: string; points: number } | null>(null);
+  const [memoryQuest, setMemoryQuest] = useState<Quest | null>(null);
 
-  const planned = profile.active.filter((a) => a.status !== "completed");
-  const done = profile.active.filter((a) => a.status === "completed");
+  const activeList = profile.active.filter((a) => a.status !== "completed");
+  const savedList = profile.savedQuests
+    .map((id) => ALL_QUESTS.find((q) => q.id === id))
+    .filter((q): q is Quest => Boolean(q))
+    // hide saved quests already promoted to active
+    .filter((q) => !profile.active.some((a) => a.questId === q.id));
+
+  const lastCompleted = profile.active.filter((a) => a.status === "completed").slice(-1)[0];
+  const lastQuest = lastCompleted ? ALL_QUESTS.find((q) => q.id === lastCompleted.questId) : null;
 
   return (
     <AppShell>
       <header className="px-5 pt-6">
-        <h1 className="font-display text-3xl leading-tight">Active Quests</h1>
-        <p className="text-sm text-muted-foreground">{planned.length} on your list · {done.length} stamped</p>
+        <h1 className="font-display text-3xl leading-tight">Active</h1>
+        <p className="text-sm text-muted-foreground">{activeList.length} on your list · {savedList.length} saved</p>
       </header>
 
-      <div className="space-y-3 px-5 pt-4">
-        {planned.length === 0 && (
+      <section className="space-y-3 px-5 pt-4">
+        {activeList.length === 0 && (
           <div className="rounded-2xl border-2 border-dashed border-foreground/30 bg-card p-8 text-center">
             <div className="text-4xl">🎯</div>
-            <p className="mt-2 font-display text-lg">Nothing accepted yet.</p>
+            <p className="mt-2 font-display text-lg">Nothing active yet.</p>
             <p className="text-sm text-muted-foreground">Swipe right on a quest to add it here.</p>
           </div>
         )}
         <AnimatePresence>
-          {planned.map((a) => {
+          {activeList.map((a) => {
             const q = ALL_QUESTS.find((x) => x.id === a.questId);
             if (!q) return null;
             return (
-              <motion.div
-                key={a.questId}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                className="overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-sticker"
-              >
-                <div className="flex">
-                  <img src={q.image} alt={q.title} className="h-28 w-28 flex-shrink-0 object-cover" />
-                  <div className="flex-1 p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{q.emoji}</span>
-                      <h3 className="font-display text-lg leading-tight">{q.title}</h3>
-                    </div>
-                    <p className="text-xs font-semibold text-muted-foreground">{q.venue} · {formatDuration(q.durationMin)}</p>
-                    <div className="mt-2 flex items-center gap-1.5">
-                      {a.status === "planned" && (
-                        <button onClick={() => { startQuest(q.id); toast("Quest started! Go!"); }}
-                          className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-electric px-3 py-1 text-xs font-bold shadow-sticker-sm">
-                          <Play className="h-3 w-3" strokeWidth={3}/> Start
-                        </button>
-                      )}
-                      {a.status === "in-progress" && (
-                        <button onClick={() => { completeQuest(q.id, q.points, 5); celebrate("big"); setCelebrating({ title: q.title, points: q.points }); }}
-                          className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-primary px-3 py-1 text-xs font-bold shadow-sticker-sm">
-                          <Check className="h-3 w-3" strokeWidth={3}/> Check in
-                        </button>
-                      )}
-                      <button onClick={() => abandonQuest(q.id)} aria-label="Abandon"
-                        className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-card px-2 py-1 text-xs font-bold shadow-sticker-sm">
-                        <Trash2 className="h-3 w-3"/>
-                      </button>
-                      {a.status === "in-progress" && <span className="ml-auto text-xs font-bold text-accent animate-pulse">● LIVE</span>}
-                    </div>
-                  </div>
-                </div>
+              <motion.div key={a.questId} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -100 }}>
+                <QuestJournalCard
+                  quest={q}
+                  active={a}
+                  onCompleted={(quest) => {
+                    setCelebrating({ title: quest.title, points: quest.points });
+                  }}
+                />
               </motion.div>
             );
           })}
         </AnimatePresence>
+      </section>
 
-        {done.length > 0 && (
-          <>
-            <h2 className="mt-8 font-display text-xl">Stamped 🏆</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {done.map((a) => {
-                const q = ALL_QUESTS.find((x) => x.id === a.questId);
-                if (!q) return null;
-                return (
-                  <div key={a.questId} className="overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-sticker-sm">
-                    <div className="relative">
-                      <img src={q.image} alt={q.title} className="h-24 w-full object-cover opacity-90"/>
-                      <div className="absolute right-2 top-2 -rotate-12 rounded-md border-2 border-primary bg-card px-1.5 py-0.5 font-display text-xs text-primary">DONE</div>
-                    </div>
-                    <div className="p-2">
-                      <p className="line-clamp-1 font-display text-sm">{q.title}</p>
-                      <p className="text-[10px] text-muted-foreground">+{q.points}pts</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+      <section className="px-5 pt-8">
+        <h2 className="font-display text-xl">Saved</h2>
+        {savedList.length === 0 ? (
+          <p className="mt-1 text-sm text-muted-foreground">Saved quests show up here. Swipe down on a quest card to save it for later.</p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            <AnimatePresence>
+              {savedList.map((q) => (
+                <motion.div key={q.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 100 }}>
+                  <SavedQuestRow quest={q}/>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         )}
-      </div>
+      </section>
+
+      <div className="h-8"/>
 
       <AnimatePresence>
-        {celebrating && (
+        {celebrating && lastQuest && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-6">
             <motion.div initial={{ scale: 0.6, rotate: -10 }} animate={{ scale: 1, rotate: 0 }}
@@ -118,13 +93,28 @@ export default function ActivePage() {
               <div className="flex justify-center gap-1 text-sun">
                 {[1,2,3,4,5].map((i) => <Star key={i} className="h-6 w-6 fill-current"/>)}
               </div>
-              <button onClick={() => setCelebrating(null)} className="mt-5 w-full rounded-2xl border-2 border-foreground bg-primary py-3 font-display text-lg shadow-sticker">
-                <Sparkles className="mr-1 inline h-4 w-4"/> Onwards
-              </button>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { setCelebrating(null); setMemoryQuest(lastQuest); }}
+                  className="rounded-2xl border-2 border-foreground bg-electric py-3 font-display text-base shadow-sticker-sm sticker-tap"
+                >
+                  Share
+                </button>
+                <button onClick={() => setCelebrating(null)} className="rounded-2xl border-2 border-foreground bg-primary py-3 font-display text-base shadow-sticker-sm sticker-tap">
+                  <Sparkles className="mr-1 inline h-4 w-4"/> Onwards
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <MemorySheet
+        open={!!memoryQuest}
+        onOpenChange={(o) => !o && setMemoryQuest(null)}
+        quest={memoryQuest}
+        active={memoryQuest ? profile.active.find((a) => a.questId === memoryQuest.id) ?? null : null}
+      />
     </AppShell>
   );
 }
