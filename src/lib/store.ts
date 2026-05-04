@@ -2,6 +2,21 @@ import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import type { UKPlace } from "@/data/places";
 
 export type QuestStatus = "planned" | "in-progress" | "completed";
+
+export interface JournalPhoto {
+  id: string;
+  url: string;
+  path?: string; // storage path for deletion
+  caption?: string;
+  addedAt: number;
+}
+
+export interface CompanionTag {
+  id: string;
+  name: string;
+  profileId?: string; // reserved — once profiles ship, tags become @-mentions
+}
+
 export interface ActiveQuest {
   questId: string;
   status: QuestStatus;
@@ -10,6 +25,9 @@ export interface ActiveQuest {
   completedAt?: number;
   rating?: number;
   note?: string;
+  notes?: string;
+  photos?: JournalPhoto[];
+  companions?: CompanionTag[];
 }
 
 export interface Profile {
