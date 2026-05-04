@@ -11,6 +11,7 @@ import { MemorySheet } from "@/components/MemorySheet";
 export default function ProfilePage() {
   const profile = useProfile();
   const nav = useNavigate();
+  const [memoryQuestId, setMemoryQuestId] = useState<string | null>(null);
 
   const completed = profile.active.filter((a) => a.status === "completed");
   const stays = completed.filter((a) => a.questId.startsWith("s-")).length;
