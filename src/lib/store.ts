@@ -163,3 +163,46 @@ export function toggleSavedStay(stayId: string) {
     savedStays: p.savedStays.includes(stayId) ? p.savedStays.filter((x) => x !== stayId) : [...p.savedStays, stayId],
   }));
 }
+
+// ----- Saved → Active -----
+export function moveSavedToActive(questId: string) {
+  setProfile((p) => ({
+    savedQuests: p.savedQuests.filter((id) => id !== questId),
+    active: p.active.find((a) => a.questId === questId)
+      ? p.active
+      : [...p.active, { questId, status: "planned", acceptedAt: Date.now() }],
+  }));
+}
+export function removeSaved(questId: string) {
+  setProfile((p) => ({ savedQuests: p.savedQuests.filter((id) => id !== questId) }));
+}
+
+// ----- Journal actions -----
+function patchActive(questId: string, patch: (a: ActiveQuest) => Partial<ActiveQuest>) {
+  setProfile((p) => ({
+    active: p.active.map((a) => a.questId === questId ? { ...a, ...patch(a) } : a),
+  }));
+}
+export function updateQuestNotes(questId: string, notes: string) {
+  patchActive(questId, () => ({ notes }));
+}
+export function addQuestPhoto(questId: string, photo: JournalPhoto) {
+  patchActive(questId, (a) => ({ photos: [...(a.photos ?? []), photo] }));
+}
+export function removeQuestPhoto(questId: string, photoId: string) {
+  patchActive(questId, (a) => ({ photos: (a.photos ?? []).filter((p) => p.id !== photoId) }));
+}
+export function addCompanion(questId: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  patchActive(questId, (a) => ({
+    companions: [...(a.companions ?? []), { id: crypto.randomUUID(), name: trimmed }],
+  }));
+}
+export function removeCompanion(questId: string, companionId: string) {
+  patchActive(questId, (a) => ({ companions: (a.companions ?? []).filter((c) => c.id !== companionId) }));
+}
+export function setQuestRating(questId: string, rating: number) {
+  patchActive(questId, () => ({ rating }));
+}
+
