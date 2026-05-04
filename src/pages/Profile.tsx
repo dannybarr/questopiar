@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useProfile, resetProfile } from "@/lib/store";
 import { ALL_QUESTS } from "@/data/quests";
+import type { Quest } from "@/data/quests";
 import { BADGES } from "@/data/places";
-import { Flame, Trophy, MapPin, RotateCcw } from "lucide-react";
+import { Flame, Trophy, MapPin, RotateCcw, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MemorySheet } from "@/components/MemorySheet";
 
 export default function ProfilePage() {
   const profile = useProfile();
