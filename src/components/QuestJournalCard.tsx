@@ -91,7 +91,7 @@ export function QuestJournalCard({ quest, active, defaultOpen, onCompleted }: Pr
             )}
             {active.status === "in-progress" && (
               <span className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-primary px-3 py-1 text-xs font-bold shadow-sticker-sm" onClick={(e) => { e.stopPropagation(); handleCheckIn(); }}>
-                <Check className="h-3 w-3" strokeWidth={3}/> Check in
+                <Check className="h-3 w-3" strokeWidth={3}/> Complete
               </span>
             )}
             <span onClick={(e) => { e.stopPropagation(); abandonQuest(quest.id); }} aria-label="Abandon" className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-card px-2 py-1 text-xs font-bold shadow-sticker-sm">
