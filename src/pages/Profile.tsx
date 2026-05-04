@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useProfile, resetProfile } from "@/lib/store";
 import { ALL_QUESTS } from "@/data/quests";
+import type { Quest } from "@/data/quests";
 import { BADGES } from "@/data/places";
-import { Flame, Trophy, MapPin, RotateCcw } from "lucide-react";
+import { Flame, Trophy, MapPin, RotateCcw, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MemorySheet } from "@/components/MemorySheet";
 
 export default function ProfilePage() {
   const profile = useProfile();
   const nav = useNavigate();
+  const [memoryQuestId, setMemoryQuestId] = useState<string | null>(null);
 
   const completed = profile.active.filter((a) => a.status === "completed");
   const stays = completed.filter((a) => a.questId.startsWith("s-")).length;
@@ -80,6 +84,47 @@ export default function ProfilePage() {
         )}
       </section>
 
+      <section className="px-5 pt-5">
+        <h2 className="font-display text-lg">Memories</h2>
+        {(() => {
+          const memories = completed.filter((a) => (a.notes && a.notes.trim()) || (a.photos && a.photos.length) || (a.companions && a.companions.length) || (a.rating && a.rating > 0));
+          if (memories.length === 0) {
+            return <p className="mt-1 text-sm text-muted-foreground">Add notes, photos or tag friends on a quest and it'll show up here.</p>;
+          }
+          return (
+            <div className="mt-2 space-y-2">
+              {memories.map((a) => {
+                const q = ALL_QUESTS.find((x) => x.id === a.questId);
+                if (!q) return null;
+                const hero = a.photos?.[0]?.url ?? q.image;
+                const noteExcerpt = a.notes?.slice(0, 80);
+                return (
+                  <button key={a.questId} onClick={() => setMemoryQuestId(a.questId)}
+                    className="flex w-full gap-3 rounded-2xl border-2 border-foreground bg-card p-2 text-left shadow-sticker-sm sticker-tap">
+                    <img src={hero} alt={q.title} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover"/>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 font-display text-sm leading-tight">{q.emoji} {q.title}</p>
+                      <div className="mt-0.5 flex items-center gap-1">
+                        {[1,2,3,4,5].map((i) => (
+                          <Star key={i} className={`h-3 w-3 text-sun ${(a.rating ?? 0) >= i ? "fill-current" : "opacity-30"}`} strokeWidth={2.5}/>
+                        ))}
+                        {a.companions && a.companions.length > 0 && (
+                          <span className="ml-2 text-[10px] font-semibold text-muted-foreground">+{a.companions.length} 👥</span>
+                        )}
+                        {a.photos && a.photos.length > 0 && (
+                          <span className="ml-1 text-[10px] font-semibold text-muted-foreground">📷 {a.photos.length}</span>
+                        )}
+                      </div>
+                      {noteExcerpt && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{noteExcerpt}{a.notes && a.notes.length > 80 ? "…" : ""}</p>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </section>
+
       <section className="px-5 pt-5 pb-2">
         <h2 className="font-display text-lg">Badges</h2>
         <div className="mt-2 grid grid-cols-3 gap-2">
@@ -105,6 +150,13 @@ export default function ProfilePage() {
           <RotateCcw className="mr-1 inline h-4 w-4"/> Reset demo
         </button>
       </section>
+
+      <MemorySheet
+        open={!!memoryQuestId}
+        onOpenChange={(o) => !o && setMemoryQuestId(null)}
+        quest={memoryQuestId ? ALL_QUESTS.find((q) => q.id === memoryQuestId) ?? null : null}
+        active={memoryQuestId ? profile.active.find((a) => a.questId === memoryQuestId) ?? null : null}
+      />
     </AppShell>
   );
 }

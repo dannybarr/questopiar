@@ -2,6 +2,21 @@ import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import type { UKPlace } from "@/data/places";
 
 export type QuestStatus = "planned" | "in-progress" | "completed";
+
+export interface JournalPhoto {
+  id: string;
+  url: string;
+  path?: string; // storage path for deletion
+  caption?: string;
+  addedAt: number;
+}
+
+export interface CompanionTag {
+  id: string;
+  name: string;
+  profileId?: string; // reserved — once profiles ship, tags become @-mentions
+}
+
 export interface ActiveQuest {
   questId: string;
   status: QuestStatus;
@@ -10,6 +25,9 @@ export interface ActiveQuest {
   completedAt?: number;
   rating?: number;
   note?: string;
+  notes?: string;
+  photos?: JournalPhoto[];
+  companions?: CompanionTag[];
 }
 
 export interface Profile {
@@ -145,3 +163,46 @@ export function toggleSavedStay(stayId: string) {
     savedStays: p.savedStays.includes(stayId) ? p.savedStays.filter((x) => x !== stayId) : [...p.savedStays, stayId],
   }));
 }
+
+// ----- Saved → Active -----
+export function moveSavedToActive(questId: string) {
+  setProfile((p) => ({
+    savedQuests: p.savedQuests.filter((id) => id !== questId),
+    active: p.active.find((a) => a.questId === questId)
+      ? p.active
+      : [...p.active, { questId, status: "planned", acceptedAt: Date.now() }],
+  }));
+}
+export function removeSaved(questId: string) {
+  setProfile((p) => ({ savedQuests: p.savedQuests.filter((id) => id !== questId) }));
+}
+
+// ----- Journal actions -----
+function patchActive(questId: string, patch: (a: ActiveQuest) => Partial<ActiveQuest>) {
+  setProfile((p) => ({
+    active: p.active.map((a) => a.questId === questId ? { ...a, ...patch(a) } : a),
+  }));
+}
+export function updateQuestNotes(questId: string, notes: string) {
+  patchActive(questId, () => ({ notes }));
+}
+export function addQuestPhoto(questId: string, photo: JournalPhoto) {
+  patchActive(questId, (a) => ({ photos: [...(a.photos ?? []), photo] }));
+}
+export function removeQuestPhoto(questId: string, photoId: string) {
+  patchActive(questId, (a) => ({ photos: (a.photos ?? []).filter((p) => p.id !== photoId) }));
+}
+export function addCompanion(questId: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  patchActive(questId, (a) => ({
+    companions: [...(a.companions ?? []), { id: crypto.randomUUID(), name: trimmed }],
+  }));
+}
+export function removeCompanion(questId: string, companionId: string) {
+  patchActive(questId, (a) => ({ companions: (a.companions ?? []).filter((c) => c.id !== companionId) }));
+}
+export function setQuestRating(questId: string, rating: number) {
+  patchActive(questId, () => ({ rating }));
+}
+
