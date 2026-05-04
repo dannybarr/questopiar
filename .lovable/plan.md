@@ -1,86 +1,69 @@
-## Stay Quests — Unique places to stay, with affiliate revenue
+# Active → Active + Saved, Quest Journal & Memories
 
-A new "Stay Quests" tab where users discover unique Airbnbs, boutique hotels, treehouses, shepherd's huts, glamping pods, etc. in their chosen area, then book via affiliate links.
+## 1. Page restructure (`src/pages/Active.tsx`)
 
-### Important reality check on data sources
+Two stacked sections, no more "Stamped" grid:
 
-Before building, you should know how each provider actually works — this shapes what we can build:
+- **Active** (top) — large expandable journal tiles for quests with `status` of `planned` or `in-progress`.
+- **Saved** (below) — compact rows for quests the user swiped "save for later" (`profile.savedQuests`). Each row has **Move to Active** and **Remove**.
 
-- **Booking.com** — has a real affiliate program (Booking.com Affiliate Partner Programme / Partner Hub). Approved partners get a deeplink format `https://www.booking.com/searchresults.html?aid=YOUR_AID&...` plus, after approval, access to the **Demand API** for live inventory. Without API approval (which takes days/weeks), we can still earn commission via **affiliate deeplinks** to search results and individual hotels.
-- **Airbnb** — **does not currently offer a public affiliate program or public API**. The old "Airbnb Associates" program closed years ago. We can still deeplink to Airbnb listings/search (`https://www.airbnb.co.uk/s/{location}/homes?...`), but you will not earn commission unless you join a third-party network (e.g. Awin, Travelpayouts) that resells Airbnb traffic — and even those are limited.
-- **Realistic alternatives that pay commission today**: Booking.com (hotels + some unique stays), **Hostelworld**, **Plum Guide**, **Canopy & Stars** (Awin — unique UK stays, perfect fit), **Sykes Cottages**, **Vrbo** (CJ Affiliate), **Expedia Group** (hotels.com / Vrbo). I'd strongly recommend **Booking.com + Canopy & Stars** as the v1 pair for "unique UK stays."
+Completed quests no longer show here — they live on Profile under **Memories**.
 
-### v1 approach (no API approval required, ships now)
+## 2. Data model (`src/lib/store.ts`)
 
-Use the same proven pattern as `generate-quests`: an AI-curated list of real, named unique stays in the user's area, each enriched with:
-- A **Booking.com affiliate deeplink** (search by property name + city, with your `aid`)
-- An **Airbnb search deeplink** (works as discovery, no commission until/unless you join a network)
-- Optional **Canopy & Stars** deeplink for glamping/cabins (Awin tracking)
-- A real image (same `resolveImage` cascade we already use: official site og:image → Wikipedia → curated Unsplash fallback keyed on the property name so each card is unique)
+Extend `ActiveQuest` with journal fields:
 
-When you later get approved for Booking's Demand API, we swap the AI-curated list for live inventory in the same edge function — no UI changes needed.
+```ts
+interface JournalPhoto { id: string; url: string; caption?: string; addedAt: number; }
+interface CompanionTag { id: string; name: string; profileId?: string; } // profileId reserved for future profile linking
 
-### What we'll build
-
-1. **New page**: `/stays` — "Stay Quests" tab in the bottom nav (replaces or sits alongside Discover; recommend adding as a 5th tab, or replacing Discover if you want to keep 4).
-2. **New edge function**: `supabase/functions/generate-stays/index.ts`
-   - Input: `{ lat, lng, radiusMiles, locationName, vibe? }`
-   - Calls Lovable AI (`google/gemini-2.5-flash`) with a prompt that asks for 8–12 genuinely unique, real, currently-operating stays within radius (treehouses, shepherd's huts, converted chapels, lighthouse keepers' cottages, design-led boutique hotels, narrowboats, etc. — never generic chain hotels).
-   - For each: `name, type, area, blurb, whyUnique, priceBand (£/££/£££/££££), nights, sleeps, websiteUrl, bookingHotelName, latitude, longitude, imageQuery`.
-   - Server enriches each with: Booking.com affiliate URL, Airbnb search URL, image (og:image → Wikipedia → Unsplash with name-seeded sig).
-   - Same 30-min localStorage cache pattern as quests.
-3. **UI** (`src/pages/Stays.tsx`):
-   - Header with location + radius (reuses profile.location/radiusMiles).
-   - Filter chips: type (Cabin, Treehouse, Boutique, Glamping, Boat, Castle…), price band, sleeps.
-   - Card list with image, name, type badge, area, price band, "Why it's special" blurb, **Book on Booking.com** primary CTA, **View on Airbnb** secondary, **Save** heart.
-   - Detail sheet (reuse `QuestDetailSheet` pattern) with full blurb, map preview, both affiliate CTAs prominently.
-4. **Affiliate config**:
-   - Store your Booking AID as a public env var `VITE_BOOKING_AFFILIATE_AID` (it's a public ID, safe in the client) so you can swap it without redeploying functions. Same for any future Awin publisher ID.
-   - Centralised helper `src/lib/affiliate.ts` builds the URLs so all CTAs are consistent and trackable.
-5. **Save / track**: extend the existing store with `savedStays: string[]` and surface saved stays on the Profile page (small section "Saved stays").
-6. **Analytics hook**: log every affiliate click to `console.info` for now, with a TODO to wire to a `stay_clicks` table later for revenue attribution.
-
-### Affiliate URL formats (technical)
-
-```
-Booking.com:
-https://www.booking.com/searchresults.html
-  ?aid={VITE_BOOKING_AFFILIATE_AID}
-  &ss={encodeURIComponent(propertyName + ", " + city)}
-  &checkin={today+14}&checkout={today+16}
-  &group_adults=2&no_rooms=1
-
-Airbnb (discovery, no commission):
-https://www.airbnb.co.uk/s/{slug(location)}/homes
-  ?query={encodeURIComponent(propertyName)}
-  &adults=2
-
-Canopy & Stars via Awin (if/when you join):
-https://www.awin1.com/cread.php
-  ?awinmid={MID}&awinaffid={VITE_AWIN_AFFID}
-  &ued={encoded canopyandstars URL}
+interface ActiveQuest {
+  // existing fields...
+  notes?: string;
+  photos?: JournalPhoto[];
+  companions?: CompanionTag[];   // "Who was there"
+  rating?: number;                // already exists, surfaced in journal as 1–5 stars
+}
 ```
 
-### File changes
+New actions: `updateQuestNotes`, `addQuestPhoto`, `removeQuestPhoto`, `addCompanion`, `removeCompanion`, `setQuestRating`, `moveSavedToActive`, `removeSaved`.
 
-```
-src/
-  pages/Stays.tsx                (new)
-  components/StayCard.tsx        (new)
-  components/StayDetailSheet.tsx (new)
-  lib/affiliate.ts               (new)
-  lib/store.ts                   (add savedStays + actions)
-  components/BottomNav.tsx       (add Stays tab, icon: BedDouble)
-  App.tsx                        (add /stays route)
-  pages/Profile.tsx              (small "Saved stays" section)
+## 3. Photo storage
 
-supabase/functions/generate-stays/index.ts  (new — mirrors generate-quests)
-```
+Migration creates a public `quest-photos` bucket with RLS for anon read/insert/delete (MVP — auth comes later).
 
-### Decisions I need from you before I build
+`src/lib/uploadQuestPhoto.ts` uploads to `quest-photos/{questId}/{uuid}.{ext}` and returns the public URL stored in the journal.
 
-1. **Affiliate program**: do you already have a Booking.com affiliate `aid`? If yes, share it (it's public — safe in client env). If no, I'll scaffold with a placeholder and link you to apply: https://www.booking.com/affiliate-program/v2/index.html
-2. **Airbnb expectation**: are you OK that Airbnb links won't earn commission (just user value), or do you want me to skip Airbnb entirely and use Booking + Canopy & Stars (Awin) as the two providers?
-3. **Nav**: 5th tab (Quests / Active / Stays / Discover / Profile) or replace Discover with Stays?
+## 4. New components
 
-Once you confirm those three, I'll implement end-to-end in one pass.
+- **`QuestJournalCard.tsx`** — large expandable Active tile. Collapsed: hero image, title, Start/Check-in buttons. Expanded sections:
+  - **Who was there** — chip input. Free-text now; each chip carries an optional `profileId` slot so once social profiles ship, chips become tappable @-mentions with no migration.
+  - **Notes** — Textarea, autosave.
+  - **Photos** — file input + grid with remove.
+  - **Rating** — 1–5 stars (shown after Check-in).
+- **`SavedQuestRow.tsx`** — compact tile with Move-to-Active and Remove actions.
+- **`MemorySheet.tsx`** — read-only Sheet rendering all journal content for a completed quest, plus a **Share card** button.
+- **`ShareCard.tsx`** — generates a 1080×1350 PNG via `html-to-image` (hero photo, title, rating stars, companions, +points stamp). Triggers `navigator.share` with file fallback to download.
+
+## 5. Profile (`src/pages/Profile.tsx`)
+
+New **Memories** section between Passport and Badges. Filters `profile.active` for `status === 'completed'` with any journal content (photo / note / companion / rating). Renders memory cards (hero photo · title · rating stars · companion count · note excerpt). Tap → `MemorySheet`.
+
+Passport stamps remain as the lightweight grid for quests completed without a journal.
+
+## 6. Completion flow
+
+On Check-in, the existing celebration modal gets two new CTAs:
+- **Add memory** → opens journal expanded for photos, companions, rating.
+- **Share** → opens `ShareCard` directly.
+
+## Technical notes
+
+- `framer-motion` for the expand/collapse animation on `QuestJournalCard`.
+- All new fields optional — existing local profiles stay valid.
+- Companion chips use `crypto.randomUUID()` ids; future migration just attaches `profileId` when a tagged user joins, no schema change needed.
+- Share card uses `html-to-image` (lightweight, no canvas wrangling).
+
+## Out of scope
+
+Authentication, voice notes, mood check-ins, cost tracking, weather stamp, AI suggestions, brainstorm section.
