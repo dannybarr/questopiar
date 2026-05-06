@@ -6,9 +6,10 @@ import { ALL_QUESTS, type Quest } from "@/data/quests";
 import { useProfile, toggleUpvote } from "@/lib/store";
 import { distanceMiles, formatDistance } from "@/lib/geo";
 import { MissionSheet } from "@/components/MissionSheet";
+import { MissionBuilder } from "@/components/MissionBuilder";
 import { QuestDetailSheet } from "@/components/QuestDetailSheet";
 import { motion } from "framer-motion";
-import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock, CheckCircle2, Plus } from "lucide-react";
 
 // Deterministic mock completion count per quest (200–4000)
 const completionsFor = (id: string) => {
@@ -26,12 +27,14 @@ export default function DiscoverPage() {
   const [tab, setTab] = useState<Tab>("All");
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
   const [openQuest, setOpenQuest] = useState<Quest | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
 
   const trending = ALL_QUESTS.slice(0, 6);
 
   const missions = useMemo(() => {
     const loc = profile.location;
-    const items = MOCK_MISSIONS.map((m) => ({
+    const all = [...profile.customMissions, ...MOCK_MISSIONS];
+    const items = all.map((m) => ({
       m,
       dist: loc ? distanceMiles(loc, m) : null,
     }));
@@ -42,7 +45,7 @@ export default function DiscoverPage() {
       if (a.dist !== null && b.dist !== null && a.dist !== b.dist) return a.dist - b.dist;
       return a.m.whenISO.localeCompare(b.m.whenISO);
     });
-  }, [profile.location, profile.radiusMiles]);
+  }, [profile.location, profile.radiusMiles, profile.customMissions]);
 
   return (
     <AppShell>
@@ -85,13 +88,22 @@ export default function DiscoverPage() {
       {/* Missions */}
       {(tab === "All" || tab === "Missions") && (
         <section className="space-y-3 px-5 pt-3">
-          <div>
-            <h2 className="font-display text-lg flex items-center gap-1.5">
-              <Target className="h-4 w-4" /> Missions
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Group side-quests near {profile.location?.name ?? "you"}. Hop in or pitch your own.
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="font-display text-lg flex items-center gap-1.5">
+                <Target className="h-4 w-4" /> Missions
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Group side-quests near {profile.location?.name ?? "you"}. Hop in or pitch your own.
+              </p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setBuilderOpen(true)}
+              className="flex flex-shrink-0 items-center gap-1.5 rounded-full border-2 border-foreground bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sticker-sm"
+            >
+              <Plus className="h-4 w-4" strokeWidth={3} /> Build a Mission
+            </motion.button>
           </div>
 
           {missions.length === 0 && (
@@ -180,6 +192,7 @@ export default function DiscoverPage() {
         onOpenChange={(o) => !o && setActiveMission(null)}
       />
       <QuestDetailSheet quest={openQuest} open={!!openQuest} onOpenChange={(o) => !o && setOpenQuest(null)} />
+      <MissionBuilder open={builderOpen} onOpenChange={setBuilderOpen} />
 
       {/* Reviews feed */}
       {(tab === "All" || tab === "Activities" || tab === "Stays") && (
