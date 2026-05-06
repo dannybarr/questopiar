@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import type { UKPlace } from "@/data/places";
+import type { Mission } from "@/data/missions";
 
 export type QuestStatus = "planned" | "in-progress" | "completed";
 
@@ -47,6 +48,7 @@ export interface Profile {
   savedStays: string[];
   joinedMissions: string[];
   requestedMissions: string[];
+  customMissions: Mission[];
 }
 
 const KEY = "sidequest:v1";
@@ -68,6 +70,7 @@ const initial: Profile = {
   savedStays: [],
   joinedMissions: [],
   requestedMissions: [],
+  customMissions: [],
 };
 
 let state: Profile = load();
