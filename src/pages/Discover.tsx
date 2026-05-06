@@ -2,12 +2,21 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DISCOVER_POSTS } from "@/data/discover";
 import { MOCK_MISSIONS, type Mission } from "@/data/missions";
-import { ALL_QUESTS } from "@/data/quests";
+import { ALL_QUESTS, type Quest } from "@/data/quests";
 import { useProfile, toggleUpvote } from "@/lib/store";
 import { distanceMiles, formatDistance } from "@/lib/geo";
 import { MissionSheet } from "@/components/MissionSheet";
+import { QuestDetailSheet } from "@/components/QuestDetailSheet";
 import { motion } from "framer-motion";
-import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock } from "lucide-react";
+import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock, CheckCircle2 } from "lucide-react";
+
+// Deterministic mock completion count per quest (200–4000)
+const completionsFor = (id: string) => {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return 200 + (h % 3800);
+};
+const fmtCompletions = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
 
 const TABS = ["All", "Activities", "Stays", "Missions"] as const;
 type Tab = typeof TABS[number];
@@ -16,6 +25,7 @@ export default function DiscoverPage() {
   const profile = useProfile();
   const [tab, setTab] = useState<Tab>("All");
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
+  const [openQuest, setOpenQuest] = useState<Quest | null>(null);
 
   const trending = ALL_QUESTS.slice(0, 6);
 
@@ -50,15 +60,25 @@ export default function DiscoverPage() {
       <section className="pt-2">
         <h2 className="px-5 font-display text-lg flex items-center gap-1.5"><Flame className="h-4 w-4 text-accent"/> Trending this week</h2>
         <div className="-mx-1 mt-2 flex gap-3 overflow-x-auto px-5 pb-3 scroll-hide">
-          {trending.map((q) => (
-            <div key={q.id} className="w-40 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-sticker-sm">
-              <img src={q.image} alt={q.title} className="h-24 w-full object-cover"/>
-              <div className="p-2">
-                <p className="line-clamp-2 font-display text-sm leading-tight">{q.emoji} {q.title}</p>
-                <p className="text-[10px] text-muted-foreground">{q.city}</p>
-              </div>
-            </div>
-          ))}
+          {trending.map((q) => {
+            const n = completionsFor(q.id);
+            return (
+              <button
+                key={q.id}
+                onClick={() => setOpenQuest(q)}
+                className="w-40 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-foreground bg-card text-left shadow-sticker-sm transition-transform hover:-translate-y-0.5 sticker-tap"
+              >
+                <img src={q.image} alt={q.title} className="h-24 w-full object-cover" />
+                <div className="space-y-1 p-2">
+                  <p className="line-clamp-2 font-display text-sm leading-tight">{q.emoji} {q.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{q.city}</p>
+                  <p className="flex items-center gap-1 text-[10px] font-bold text-primary">
+                    <CheckCircle2 className="h-3 w-3" /> {fmtCompletions(n)} completions
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
