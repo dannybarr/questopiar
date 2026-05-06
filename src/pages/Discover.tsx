@@ -179,6 +179,7 @@ export default function DiscoverPage() {
         open={!!activeMission}
         onOpenChange={(o) => !o && setActiveMission(null)}
       />
+      <QuestDetailSheet quest={openQuest} open={!!openQuest} onOpenChange={(o) => !o && setOpenQuest(null)} />
 
       {/* Reviews feed */}
       {(tab === "All" || tab === "Activities" || tab === "Stays") && (
