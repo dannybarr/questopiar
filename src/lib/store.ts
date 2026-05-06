@@ -45,6 +45,8 @@ export interface Profile {
   upvoted: string[];
   joinedGroups: string[];
   savedStays: string[];
+  joinedMissions: string[];
+  requestedMissions: string[];
 }
 
 const KEY = "sidequest:v1";
@@ -64,6 +66,8 @@ const initial: Profile = {
   upvoted: [],
   joinedGroups: [],
   savedStays: [],
+  joinedMissions: [],
+  requestedMissions: [],
 };
 
 let state: Profile = load();
@@ -162,6 +166,25 @@ export function toggleSavedStay(stayId: string) {
   setProfile((p) => ({
     savedStays: p.savedStays.includes(stayId) ? p.savedStays.filter((x) => x !== stayId) : [...p.savedStays, stayId],
   }));
+}
+
+// ----- Missions -----
+export function joinMission(missionId: string) {
+  setProfile((p) => ({
+    joinedMissions: Array.from(new Set([...p.joinedMissions, missionId])),
+    requestedMissions: p.requestedMissions.filter((id) => id !== missionId),
+  }));
+}
+export function requestJoinMission(missionId: string) {
+  setProfile((p) => ({
+    requestedMissions: Array.from(new Set([...p.requestedMissions, missionId])),
+  }));
+}
+export function leaveMission(missionId: string) {
+  setProfile((p) => ({ joinedMissions: p.joinedMissions.filter((id) => id !== missionId) }));
+}
+export function cancelMissionRequest(missionId: string) {
+  setProfile((p) => ({ requestedMissions: p.requestedMissions.filter((id) => id !== missionId) }));
 }
 
 // ----- Saved → Active -----
