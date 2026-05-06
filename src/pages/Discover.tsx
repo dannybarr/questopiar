@@ -1,20 +1,38 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DISCOVER_POSTS } from "@/data/discover";
-import { GROUPS } from "@/data/groups";
+import { MOCK_MISSIONS, type Mission } from "@/data/missions";
 import { ALL_QUESTS } from "@/data/quests";
-import { useProfile, toggleUpvote, toggleGroup } from "@/lib/store";
+import { useProfile, toggleUpvote } from "@/lib/store";
+import { distanceMiles, formatDistance } from "@/lib/geo";
+import { MissionSheet } from "@/components/MissionSheet";
 import { motion } from "framer-motion";
-import { ArrowUp, MessageCircle, Star, Users, Flame } from "lucide-react";
+import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock } from "lucide-react";
 
-const TABS = ["All", "Activities", "Stays", "Groups"] as const;
+const TABS = ["All", "Activities", "Stays", "Missions"] as const;
 type Tab = typeof TABS[number];
 
 export default function DiscoverPage() {
   const profile = useProfile();
   const [tab, setTab] = useState<Tab>("All");
+  const [activeMission, setActiveMission] = useState<Mission | null>(null);
 
   const trending = ALL_QUESTS.slice(0, 6);
+
+  const missions = useMemo(() => {
+    const loc = profile.location;
+    const items = MOCK_MISSIONS.map((m) => ({
+      m,
+      dist: loc ? distanceMiles(loc, m) : null,
+    }));
+    const within = items.filter(({ dist }) =>
+      profile.radiusMiles >= 9999 || dist === null ? true : dist <= profile.radiusMiles,
+    );
+    return within.sort((a, b) => {
+      if (a.dist !== null && b.dist !== null && a.dist !== b.dist) return a.dist - b.dist;
+      return a.m.whenISO.localeCompare(b.m.whenISO);
+    });
+  }, [profile.location, profile.radiusMiles]);
 
   return (
     <AppShell>
