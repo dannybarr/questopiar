@@ -1,69 +1,128 @@
-# Active → Active + Saved, Quest Journal & Memories
+## Rename & rework: Open groups → Missions
 
-## 1. Page restructure (`src/pages/Active.tsx`)
+Turn the existing "Open groups" section on Discover into a **Missions** feed: location-aware group side-quests (unique pubs, run clubs, activity bars, park BBQs, supper clubs, lido swims, etc.) that users can open into a "The Plan" sheet and **Request to Join** (or instantly join if the mission is open).
 
-Two stacked sections, no more "Stamped" grid:
+---
 
-- **Active** (top) — large expandable journal tiles for quests with `status` of `planned` or `in-progress`.
-- **Saved** (below) — compact rows for quests the user swiped "save for later" (`profile.savedQuests`). Each row has **Move to Active** and **Remove**.
-
-Completed quests no longer show here — they live on Profile under **Memories**.
-
-## 2. Data model (`src/lib/store.ts`)
-
-Extend `ActiveQuest` with journal fields:
+### 1. Data model — `src/data/missions.ts` (new)
 
 ```ts
-interface JournalPhoto { id: string; url: string; caption?: string; addedAt: number; }
-interface CompanionTag { id: string; name: string; profileId?: string; } // profileId reserved for future profile linking
+export type MissionVisibility = "open" | "approval";
+export type MissionCategory = "pub" | "run" | "activity-bar" | "bbq" | "swim" | "ride" | "food" | "nightlife" | "outdoors";
 
-interface ActiveQuest {
-  // existing fields...
-  notes?: string;
-  photos?: JournalPhoto[];
-  companions?: CompanionTag[];   // "Who was there"
-  rating?: number;                // already exists, surfaced in journal as 1–5 stars
+export interface MissionOwner { id: string; name: string; avatar: string; }
+export interface MissionAttendee { id: string; name: string; avatar: string; status: "going" | "pending"; }
+
+export interface Mission {
+  id: string;
+  title: string;
+  emoji: string;
+  category: MissionCategory;
+  cover: string;
+  city: string;
+  region: string;
+  lat: number;
+  lng: number;
+  venue: string;
+  address?: string;
+  when: string;            // human label, e.g. "Sat 2pm"
+  whenISO: string;         // for sorting
+  visibility: MissionVisibility;
+  capacity: number;
+  owner: MissionOwner;
+  attendees: MissionAttendee[];
+  vibe: string;            // short tagline
+  thePlan: string;         // 2–4 sentences: meet point, flow, what to bring
+  bring?: string[];
+  costPP?: string;         // "£12pp" or "Free"
 }
+export const MOCK_MISSIONS: Mission[] = [ /* ~10–12 entries spanning London + Kent + Brighton */ ];
 ```
 
-New actions: `updateQuestNotes`, `addQuestPhoto`, `removeQuestPhoto`, `addCompanion`, `removeCompanion`, `setQuestRating`, `moveSavedToActive`, `removeSaved`.
+**Mock missions to seed** (location-tagged so distance filter works the same way `Quests` page does):
 
-## 3. Photo storage
+- 🍻 *Hidden Pub Hunt — Soho speakeasies* (London, approval, 6 spots)
+- 🏃 *Sunday Slow Run Club — Hackney Marshes 5k + coffee* (London, open, 15 spots)
+- 🏓 *Bounce Ping-Pong Takeover* (Shoreditch, open, 8 spots)
+- 🔥 *Park BBQ — London Fields golden hour* (London, open, 20 spots)
+- 🪓 *Axe-throwing & wings* (Vauxhall, approval, 6 spots)
+- 🌊 *Whitstable cold dip + chips* (Kent, open, 12 spots)
+- 🚴 *Richmond Park dawn loop* (London, open, 10 spots)
+- 🏰 *Castle climbing session + vegan brownie* (Stoke Newington, open, 8 spots)
+- 🛼 *Flippers Roller Disco crew night* (Olympia, approval, 10 spots)
+- 🎡 *Margate Old Town wander → Dreamland* (Kent, open, 12 spots)
+- ⚽ *Powerleague 5-a-side — pickup* (Bermondsey, approval, 10 spots)
+- 🍕 *Brockley Market crawl* (London, open, 15 spots)
 
-Migration creates a public `quest-photos` bucket with RLS for anon read/insert/delete (MVP — auth comes later).
+Categories chosen to mirror the existing quest "vibe" framework (date-night, with-mates, outdoorsy, wild) so Missions feel native, not bolted on.
 
-`src/lib/uploadQuestPhoto.ts` uploads to `quest-photos/{questId}/{uuid}.{ext}` and returns the public URL stored in the journal.
+### 2. Location syncing
 
-## 4. New components
+Reuse the same pattern as the homepage Quests feed:
+- Read `profile.location` and `profile.radiusMiles` from `useProfile()`.
+- Filter `MOCK_MISSIONS` with `distanceMiles()` from `src/lib/geo.ts`.
+- Sort by ascending distance, then by `whenISO`.
+- If `radiusMiles === 9999`, show all.
+- Empty state: "No missions near {town} yet — try widening your radius."
 
-- **`QuestJournalCard.tsx`** — large expandable Active tile. Collapsed: hero image, title, Start/Check-in buttons. Expanded sections:
-  - **Who was there** — chip input. Free-text now; each chip carries an optional `profileId` slot so once social profiles ship, chips become tappable @-mentions with no migration.
-  - **Notes** — Textarea, autosave.
-  - **Photos** — file input + grid with remove.
-  - **Rating** — 1–5 stars (shown after Check-in).
-- **`SavedQuestRow.tsx`** — compact tile with Move-to-Active and Remove actions.
-- **`MemorySheet.tsx`** — read-only Sheet rendering all journal content for a completed quest, plus a **Share card** button.
-- **`ShareCard.tsx`** — generates a 1080×1350 PNG via `html-to-image` (hero photo, title, rating stars, companions, +points stamp). Triggers `navigator.share` with file fallback to download.
+### 3. Store additions — `src/lib/store.ts`
 
-## 5. Profile (`src/pages/Profile.tsx`)
+```ts
+joinedMissions: string[];        // missions the user is "going" to
+requestedMissions: string[];     // missions the user has requested to join (pending)
+```
+Actions:
+```ts
+joinMission(missionId)           // open missions
+requestJoinMission(missionId)    // approval missions
+leaveMission(missionId)
+cancelMissionRequest(missionId)
+```
+Persist via existing localStorage layer. No backend yet (mock).
 
-New **Memories** section between Passport and Badges. Filters `profile.active` for `status === 'completed'` with any journal content (photo / note / companion / rating). Renders memory cards (hero photo · title · rating stars · companion count · note excerpt). Tap → `MemorySheet`.
+### 4. UI — Discover page
 
-Passport stamps remain as the lightweight grid for quests completed without a journal.
+Rename the section heading "Open groups" → **"Missions"** with a subtitle:
+> *"Group side-quests near {town}. Hop in or pitch your own."*
 
-## 6. Completion flow
+Replace the current 2-card group list with a Missions grid (one column on mobile, two from `md:` up). Each card shows:
+- Cover image with category emoji badge
+- Title + venue · city
+- When · distance pill (e.g. "Sat 2pm · 1.4 mi")
+- Owner avatar + "+N going" attendee stack
+- Visibility pill: "Open" (green) or "Approval" (amber)
+- Spots remaining: "3 of 8 spots left"
+- Tap card → opens `MissionSheet`
 
-On Check-in, the existing celebration modal gets two new CTAs:
-- **Add memory** → opens journal expanded for photos, companions, rating.
-- **Share** → opens `ShareCard` directly.
+Keep the existing groups data file (`src/data/groups.ts`) intact for now — only the *Discover section* swaps from groups to missions. Group profiles can return later.
 
-## Technical notes
+### 5. New component — `src/components/MissionSheet.tsx`
 
-- `framer-motion` for the expand/collapse animation on `QuestJournalCard`.
-- All new fields optional — existing local profiles stay valid.
-- Companion chips use `crypto.randomUUID()` ids; future migration just attaches `profileId` when a tagged user joins, no schema change needed.
-- Share card uses `html-to-image` (lightweight, no canvas wrangling).
+A bottom Sheet (matches `QuestDetailSheet` styling) with three stacked blocks:
 
-## Out of scope
+1. **Hero** — cover image, title, when, venue + maps link, distance.
+2. **The Plan** — `<h3>The Plan</h3>` then the `thePlan` paragraph, "Bring" chip list, cost pill.
+3. **Crew** — owner ("Hosted by …"), attendee avatar grid with status, spots remaining bar.
 
-Authentication, voice notes, mood check-ins, cost tracking, weather stamp, AI suggestions, brainstorm section.
+Footer CTA depends on visibility + state:
+
+| State                          | Open mission         | Approval mission           |
+|--------------------------------|----------------------|----------------------------|
+| Not joined / not requested     | "Join mission"       | "Request to Join"          |
+| Joined                         | "You're going ✓ — Leave" | n/a                    |
+| Requested (pending)            | n/a                  | "Request pending — Cancel" |
+| Owner                          | "You're hosting"     | "You're hosting · Manage"  |
+
+For the mock, "Manage" is a no-op toast saying "Approval inbox coming soon".
+
+### 6. Out of scope (intentionally)
+
+- No real auth / ownership — owner is mock data; the current user is never the owner.
+- No real approval inbox or notifications.
+- No mission creation flow (will follow once auth lands). The subtitle hints at it but no CTA.
+- No edits to `src/data/groups.ts` or other pages.
+
+### Files
+
+- **New**: `src/data/missions.ts`, `src/components/MissionSheet.tsx`
+- **Edit**: `src/lib/store.ts` (add joined/requested mission state + actions), `src/pages/Discover.tsx` (replace Open Groups block with Missions block, location-filtered)

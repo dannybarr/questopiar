@@ -1,20 +1,38 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DISCOVER_POSTS } from "@/data/discover";
-import { GROUPS } from "@/data/groups";
+import { MOCK_MISSIONS, type Mission } from "@/data/missions";
 import { ALL_QUESTS } from "@/data/quests";
-import { useProfile, toggleUpvote, toggleGroup } from "@/lib/store";
+import { useProfile, toggleUpvote } from "@/lib/store";
+import { distanceMiles, formatDistance } from "@/lib/geo";
+import { MissionSheet } from "@/components/MissionSheet";
 import { motion } from "framer-motion";
-import { ArrowUp, MessageCircle, Star, Users, Flame } from "lucide-react";
+import { ArrowUp, MessageCircle, Star, Target, Flame, Lock, Unlock, MapPin, Clock } from "lucide-react";
 
-const TABS = ["All", "Activities", "Stays", "Groups"] as const;
+const TABS = ["All", "Activities", "Stays", "Missions"] as const;
 type Tab = typeof TABS[number];
 
 export default function DiscoverPage() {
   const profile = useProfile();
   const [tab, setTab] = useState<Tab>("All");
+  const [activeMission, setActiveMission] = useState<Mission | null>(null);
 
   const trending = ALL_QUESTS.slice(0, 6);
+
+  const missions = useMemo(() => {
+    const loc = profile.location;
+    const items = MOCK_MISSIONS.map((m) => ({
+      m,
+      dist: loc ? distanceMiles(loc, m) : null,
+    }));
+    const within = items.filter(({ dist }) =>
+      profile.radiusMiles >= 9999 || dist === null ? true : dist <= profile.radiusMiles,
+    );
+    return within.sort((a, b) => {
+      if (a.dist !== null && b.dist !== null && a.dist !== b.dist) return a.dist - b.dist;
+      return a.m.whenISO.localeCompare(b.m.whenISO);
+    });
+  }, [profile.location, profile.radiusMiles]);
 
   return (
     <AppShell>
@@ -44,42 +62,103 @@ export default function DiscoverPage() {
         </div>
       </section>
 
-      {/* Groups */}
-      {(tab === "All" || tab === "Groups") && (
+      {/* Missions */}
+      {(tab === "All" || tab === "Missions") && (
         <section className="space-y-3 px-5 pt-3">
-          <h2 className="font-display text-lg flex items-center gap-1.5"><Users className="h-4 w-4"/> Open groups</h2>
-          {GROUPS.map((g) => {
-            const joined = profile.joinedGroups.includes(g.id);
-            return (
-              <div key={g.id} className="overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-sticker">
-                <div className="relative h-28">
-                  <img src={g.cover} alt="" className="h-full w-full object-cover"/>
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent"/>
-                  <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between text-background">
-                    <div>
-                      <h3 className="font-display text-2xl leading-none">{g.emoji} {g.name}</h3>
-                      <p className="text-xs opacity-90">{g.vibe}</p>
+          <div>
+            <h2 className="font-display text-lg flex items-center gap-1.5">
+              <Target className="h-4 w-4" /> Missions
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Group side-quests near {profile.location?.name ?? "you"}. Hop in or pitch your own.
+            </p>
+          </div>
+
+          {missions.length === 0 && (
+            <div className="rounded-2xl border-2 border-dashed border-foreground/30 bg-card p-6 text-center text-sm text-muted-foreground">
+              No missions near {profile.location?.name ?? "you"} yet — try widening your radius.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {missions.map(({ m, dist }) => {
+              const joined = profile.joinedMissions.includes(m.id);
+              const requested = profile.requestedMissions.includes(m.id);
+              const goingCount = m.attendees.filter((a) => a.status === "going").length + (joined ? 1 : 0);
+              const spotsLeft = Math.max(0, m.capacity - goingCount);
+              const isOpen = m.visibility === "open";
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setActiveMission(m)}
+                  className="group overflow-hidden rounded-2xl border-2 border-foreground bg-card text-left shadow-sticker-sm transition-transform hover:-translate-y-0.5"
+                >
+                  <div className="relative h-32">
+                    <img src={m.cover} alt="" className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
+                    <div className="absolute left-2 top-2 flex gap-1.5">
+                      <span className="chip bg-card text-xs">{m.emoji} {m.category}</span>
+                      <span
+                        className={`chip text-xs ${
+                          isOpen ? "bg-primary text-primary-foreground" : "bg-sun"
+                        }`}
+                      >
+                        {isOpen ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                        {isOpen ? "Open" : "Approval"}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2 left-3 right-3 text-background">
+                      <h3 className="font-display text-xl leading-tight">{m.title}</h3>
+                      <p className="text-[11px] opacity-90">{m.venue} · {m.city}</p>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between p-3">
-                  <div>
-                    <div className="flex -space-x-2">
-                      {g.avatars.map((a, i) => (
-                        <span key={i} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-foreground bg-background text-sm">{a}</span>
-                      ))}
+                  <div className="space-y-2 p-3">
+                    <div className="flex flex-wrap gap-1.5 text-[11px]">
+                      <span className="chip bg-background text-[11px]">
+                        <Clock className="h-3 w-3" /> {m.when}
+                      </span>
+                      {dist !== null && (
+                        <span className="chip bg-background text-[11px]">
+                          <MapPin className="h-3 w-3" /> {formatDistance(dist)}
+                        </span>
+                      )}
                     </div>
-                    <p className="mt-1 text-xs"><span className="font-bold">Next:</span> {g.activeQuest.title} · <span className="text-muted-foreground">{g.activeQuest.when}</span></p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex -space-x-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-foreground bg-background text-xs">
+                          {m.owner.avatar}
+                        </span>
+                        {m.attendees.slice(0, 4).map((a) => (
+                          <span
+                            key={a.id}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-foreground bg-background text-xs"
+                          >
+                            {a.avatar}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-bold text-muted-foreground">
+                        {spotsLeft} spots left
+                      </span>
+                    </div>
+                    {(joined || requested) && (
+                      <p className="text-[11px] font-bold text-primary">
+                        {joined ? "You're going ✓" : "Request pending…"}
+                      </p>
+                    )}
                   </div>
-                  <button onClick={() => toggleGroup(g.id)} className={`chip ${joined ? "bg-card" : "bg-primary text-primary-foreground"}`}>
-                    {joined ? "Joined ✓" : "Join the chaos"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </section>
       )}
+
+      <MissionSheet
+        mission={activeMission}
+        open={!!activeMission}
+        onOpenChange={(o) => !o && setActiveMission(null)}
+      />
 
       {/* Reviews feed */}
       {(tab === "All" || tab === "Activities" || tab === "Stays") && (
