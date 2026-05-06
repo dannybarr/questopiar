@@ -232,3 +232,10 @@ export function setQuestRating(questId: string, rating: number) {
   patchActive(questId, () => ({ rating }));
 }
 
+
+export function createMission(m: Mission) {
+  setProfile((p) => ({
+    customMissions: [m, ...p.customMissions],
+    joinedMissions: Array.from(new Set([...p.joinedMissions, m.id])),
+  }));
+}
