@@ -103,10 +103,52 @@ async function validateImage(url: string) {
   return (res.headers.get("content-type") || "").startsWith("image/");
 }
 
-function unsplashFallback(type: string, name: string, q?: string) {
-  const tags = [q, type.replace(/-/g," "), "interior", "stay"].filter(Boolean).join(",").replace(/\s+/g,"-");
-  const sig = Math.abs([...(name || type)].reduce((a,c)=>a+c.charCodeAt(0),0)) % 100000;
-  return `https://source.unsplash.com/featured/900x700/?${encodeURIComponent(tags)}&sig=${sig}`;
+function staticStayFallback(type: string, name: string): string {
+  const STATIC: Record<string, string> = {
+    treehouse:           "1542718610-a21bfaf9d82f",
+    "shepherds-hut":     "1518780664697-55e3ad937233",
+    cabin:               "1449824913935-59a10b8d2000",
+    glamping:            "1445294211564-3ca59d999abd",
+    yurt:                "1474314170-b3f8473adb1d",
+    boat:                "1605281317010-fe5ffe798166",
+    narrowboat:          "1601581987809-a9d267ddce1a",
+    lighthouse:          "1558618666-fcd25c85cd64",
+    castle:              "1587502536575-6dfba0a6e017",
+    "converted-chapel":  "1510798831971-3935172b4823",
+    "tiny-home":         "1570129477492-45c003edd2be",
+    "boutique-hotel":    "1566073771259-6a8506099945",
+    "design-hotel":      "1445965748-7b38f9a6c03f",
+    "farm-stay":         "1500076656116-558758c991c1",
+    "off-grid":          "1501854140801-50d01698950b",
+    dome:                "1464822759023-fed622ff2c3b",
+    airstream:           "1485965120184-e220f721d03e",
+  };
+  const id = STATIC[type] || STATIC["boutique-hotel"];
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=80`;
+}
+
+async function pexelsStayFallback(imageQuery: string, type: string, name: string): Promise<string> {
+  const apiKey = Deno.env.get("PEXELS_API_KEY");
+  if (!apiKey) return staticStayFallback(type, name);
+  const readable = type.replace(/-/g, " ");
+  const queries = [imageQuery, `${readable} interior`, readable].filter(Boolean);
+  for (const q of queries) {
+    const res = await safeFetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=3&orientation=landscape`,
+      { headers: { Authorization: apiKey } },
+      3000
+    );
+    if (!res?.ok) continue;
+    try {
+      const json = await res.json();
+      const photos: any[] = json?.photos || [];
+      if (photos.length) {
+        const idx = Math.abs([...(name || q)].reduce((a, c) => a + c.charCodeAt(0), 0)) % photos.length;
+        return photos[idx].src.large;
+      }
+    } catch {}
+  }
+  return staticStayFallback(type, name);
 }
 
 async function resolveImage(s: any): Promise<string> {
@@ -118,7 +160,7 @@ async function resolveImage(s: any): Promise<string> {
       if (og && await validateImage(og)) { imageCache.set(key, og); return og; }
     } catch {}
   }
-  const fb = unsplashFallback(s.type || "boutique-hotel", s.name || "", s.imageQuery);
+  const fb = await pexelsStayFallback(s.imageQuery || "", s.type || "boutique-hotel", s.name || "");
   imageCache.set(key, fb); return fb;
 }
 

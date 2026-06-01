@@ -172,13 +172,43 @@ async function validateImage(url: string): Promise<boolean> {
   return ct.startsWith("image/");
 }
 
-function unsplashFallback(category: string, venue: string, imageQuery?: string): string {
-  const tags = [imageQuery, CATEGORY_FALLBACK_TAGS[category] || category]
-    .filter(Boolean)
-    .join(",")
-    .replace(/\s+/g, "-");
-  const sig = Math.abs([...(venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0)) % 100000;
-  return `https://source.unsplash.com/featured/900x700/?${encodeURIComponent(tags)}&sig=${sig}`;
+function staticFallback(category: string, venue: string): string {
+  const STATIC: Record<string, string[]> = {
+    active:    ["1562088022-b15c-4a6f-8587-c4a3e3b4b68c", "1571019614242-c5c5dee9f50b"],
+    chill:     ["1445965748-7b38f9a6c03f", "1510798831971-3935172b4823"],
+    foodie:    ["1414235077428-338989a2e8c0", "1504674900247-0877df9cc836"],
+    water:     ["1505118380757-91f5f5632de0", "1502680390469-be75c86b636f"],
+    climb:     ["1522163182402-834f871fd851", "1534057631577-5d13f6b55f9c"],
+    ride:      ["1558618666-fcd25c85cd64", "1517649763962-0c623066013b"],
+    nightlife: ["1566417713940-fe7c737a9ef2", "1470225620780-dba8ba36b745"],
+    nature:    ["1501854140801-50d01698950b", "1441974231531-c6227db76b6e"],
+  };
+  const ids = STATIC[category] || STATIC.chill;
+  const sig = Math.abs([...(venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0)) % ids.length;
+  return `https://images.unsplash.com/photo-${ids[sig]}?auto=format&fit=crop&w=900&q=80`;
+}
+
+async function pexelsFallback(imageQuery: string, category: string, venue: string): Promise<string> {
+  const apiKey = Deno.env.get("PEXELS_API_KEY");
+  if (!apiKey) return staticFallback(category, venue);
+  const queries = [imageQuery, CATEGORY_FALLBACK_TAGS[category] || category].filter(Boolean);
+  for (const q of queries) {
+    const res = await safeFetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=3&orientation=landscape`,
+      { headers: { Authorization: apiKey } },
+      3000
+    );
+    if (!res?.ok) continue;
+    try {
+      const json = await res.json();
+      const photos: any[] = json?.photos || [];
+      if (photos.length) {
+        const idx = Math.abs([...(venue || q)].reduce((a, c) => a + c.charCodeAt(0), 0)) % photos.length;
+        return photos[idx].src.large;
+      }
+    } catch {}
+  }
+  return staticFallback(category, venue);
 }
 
 async function resolveImage(q: any, category: string): Promise<string> {
@@ -208,8 +238,8 @@ async function resolveImage(q: any, category: string): Promise<string> {
     } catch {}
   }
 
-  // 3. Unsplash fallback
-  const fb = unsplashFallback(category, q.venue || "", q.imageQuery || q.imageKeyword);
+  // 3. Pexels search with AI-generated imageQuery → curated static fallback
+  const fb = await pexelsFallback(q.imageQuery || q.imageKeyword || "", category, q.venue || "");
   imageCache.set(cacheKey, fb);
   return fb;
 }
@@ -252,7 +282,7 @@ RULES:
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
 - For each quest, ALWAYS include the venue's official website URL (websiteUrl) so we can fetch its real photo. If the venue is a landmark/museum/park with a Wikipedia page, also include wikipediaTitle.
-- imageQuery: a precise 3-5 word visual description of THIS specific venue (e.g. "neon mini golf interior", "candlelit speakeasy cocktail bar", "Hampstead Heath viewpoint sunset").
+- imageQuery: 3-5 words describing THIS venue visually for a photo search — include setting, mood, or key detail (e.g. "glowing neon mini golf bar", "limestone gorge scramble river", "candlelit underground cocktail bar"). Never just repeat the category name.
 
 Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"websiteUrl":"https://...","wikipediaTitle":"","imageQuery":""}]}.
 Return EXACTLY ${count} quests.`;
