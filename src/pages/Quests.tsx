@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { QuestSwiper } from "@/components/QuestSwiper";
 import { QuestDetailSheet } from "@/components/QuestDetailSheet";
-import { ALL_QUESTS, ACTIVITY_QUESTS, STAY_QUESTS, Quest, QuestCategory } from "@/data/quests";
+import { ALL_QUESTS, ACTIVITY_QUESTS, Quest, QuestCategory } from "@/data/quests";
 import { useProfile, setProfile, clearSeen } from "@/lib/store";
 import { distanceMiles } from "@/lib/geo";
 import { useGeneratedQuests } from "@/hooks/useGeneratedQuests";
@@ -42,19 +42,12 @@ export default function QuestsPage() {
   );
 
   const deck = useMemo(() => {
-    let pool: Quest[];
-    if (cat === "stay") {
-      pool = STAY_QUESTS;
-    } else {
-      // Real AI quests first, then seed activity quests as backup
-      const ai = aiQuests as Quest[];
-      const seedPool = cat === "all" ? ACTIVITY_QUESTS : ACTIVITY_QUESTS.filter((q) => q.category === cat);
-      const aiFiltered = cat === "all" ? ai : ai.filter((q) => q.category === cat);
-      pool = [...aiFiltered, ...seedPool];
-    }
+    const ai = aiQuests as Quest[];
+    const seedPool = cat === "all" ? ACTIVITY_QUESTS : ACTIVITY_QUESTS.filter((q) => q.category === cat);
+    const aiFiltered = cat === "all" ? ai : ai.filter((q) => q.category === cat);
+    const pool = [...aiFiltered, ...seedPool];
     const filtered = pool.filter((q) => {
       if (profile.seenQuests.includes(q.id)) return false;
-      if (q.category === "stay") return true;
       if (!profile.location) return true;
       if (profile.radiusMiles >= 9999) return true;
       return distanceMiles(profile.location, q) <= profile.radiusMiles;
