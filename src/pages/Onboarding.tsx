@@ -89,7 +89,7 @@ export default function Onboarding() {
     if (!place) return;
     setProfile({ name: name.trim() || "Quester", avatar, location: place, radiusMiles: noLimit ? 9999 : radius });
     celebrate("big");
-    setTimeout(() => nav("/quests"), 300);
+    setTimeout(() => nav("/discover"), 300);
   };
 
   return (
