@@ -18,7 +18,6 @@ const CATS: { key: "all" | QuestCategory; label: string; emoji: string }[] = [
   { key: "nature", label: "Nature", emoji: "🌄" },
   { key: "nightlife", label: "Night", emoji: "🌃" },
   { key: "foodie", label: "Foodie", emoji: "🍻" },
-  { key: "stay", label: "Stays", emoji: "🛏️" },
 ];
 
 const PROFILE_LABEL: Record<string, string> = {

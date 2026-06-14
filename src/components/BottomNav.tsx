@@ -1,12 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Compass, Flame, Sparkles, User, BedDouble } from "lucide-react";
+import { Compass, Flame, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { to: "/quests", label: "Quests", Icon: Sparkles },
-  { to: "/active", label: "Active", Icon: Flame },
-  { to: "/stays", label: "Stays", Icon: BedDouble },
   { to: "/discover", label: "Discover", Icon: Compass },
+  { to: "/active", label: "Active", Icon: Flame },
   { to: "/profile", label: "Profile", Icon: User },
 ];
 
@@ -16,7 +14,7 @@ export function BottomNav() {
     <nav className="sticky bottom-0 z-40 px-4 pb-4 pt-2 pointer-events-none">
       <div className="pointer-events-auto mx-auto flex max-w-[440px] items-center justify-between rounded-full border-2 border-foreground bg-card px-2 py-2 shadow-sticker-lg">
         {tabs.map(({ to, label, Icon }) => {
-          const active = pathname === to || (to === "/quests" && pathname === "/");
+          const active = pathname === to || (to === "/discover" && pathname === "/");
           return (
             <NavLink key={to} to={to} className="relative flex-1">
               <motion.div
