@@ -14,7 +14,6 @@ export default function ProfilePage() {
   const [memoryQuestId, setMemoryQuestId] = useState<string | null>(null);
 
   const completed = profile.active.filter((a) => a.status === "completed");
-  const stays = completed.filter((a) => a.questId.startsWith("s-")).length;
 
   // 12-week heatmap (84 days)
   const days: { date: string; active: boolean }[] = [];
@@ -26,8 +25,6 @@ export default function ProfilePage() {
   const earnedBadges = new Set<string>();
   if (completed.length >= 1) earnedBadges.add("first-quest");
   if (profile.streak >= 5) earnedBadges.add("streak-5");
-  if (stays >= 1) earnedBadges.add("treehouse");
-  if (profile.joinedGroups.length > 0) earnedBadges.add("social-butterfly");
 
   return (
     <AppShell>

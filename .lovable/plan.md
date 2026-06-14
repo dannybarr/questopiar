@@ -1,128 +1,74 @@
-## Rename & rework: Open groups → Missions
+## Investor read on the current build
 
-Turn the existing "Open groups" section on Discover into a **Missions** feed: location-aware group side-quests (unique pubs, run clubs, activity bars, park BBQs, supper clubs, lido swims, etc.) that users can open into a "The Plan" sheet and **Request to Join** (or instantly join if the mission is open).
+Pitched as a tester, the app today is doing five things at once: swipeable quest discovery, an active/journal flow, a missions/group system, a stays marketplace, and a discover/social feed. Each is half-done. None is sharp enough to demo to a user, let alone an investor. The classic early-stage failure: feature surface > depth, so nothing feels finished and the "why does this exist" question doesn't have a one-line answer.
 
----
+**Verdict:** strip back hard. The MVP should answer one question — *"What's the move tonight, and did I actually do it?"* That's two surfaces: **Discover** (find an activity near me) and **Active** (do it, document it, keep it). Profile becomes the trophy cabinet for the documented memories. Everything else is noise until those two loops are loved.
 
-### 1. Data model — `src/data/missions.ts` (new)
+## MVP scope (what stays)
 
-```ts
-export type MissionVisibility = "open" | "approval";
-export type MissionCategory = "pub" | "run" | "activity-bar" | "bbq" | "swim" | "ride" | "food" | "nightlife" | "outdoors";
+1. **Onboarding** — name, avatar, location, radius. Untouched.
+2. **Discover (renamed from /quests)** — the swipeable + category-filtered, AI-generated, location-aware quest deck. This becomes the home screen.
+3. **Active** — saved + in-progress + completed quest journal (notes, photos, companions, rating). The documentation loop is the moat.
+4. **Profile** — passport stamps, streak heatmap, memories list, badges. All photos and memories from Active land here.
 
-export interface MissionOwner { id: string; name: string; avatar: string; }
-export interface MissionAttendee { id: string; name: string; avatar: string; status: "going" | "pending"; }
+## Cut from the interface (preserve code, hide routes)
 
-export interface Mission {
-  id: string;
-  title: string;
-  emoji: string;
-  category: MissionCategory;
-  cover: string;
-  city: string;
-  region: string;
-  lat: number;
-  lng: number;
-  venue: string;
-  address?: string;
-  when: string;            // human label, e.g. "Sat 2pm"
-  whenISO: string;         // for sorting
-  visibility: MissionVisibility;
-  capacity: number;
-  owner: MissionOwner;
-  attendees: MissionAttendee[];
-  vibe: string;            // short tagline
-  thePlan: string;         // 2–4 sentences: meet point, flow, what to bring
-  bring?: string[];
-  costPP?: string;         // "£12pp" or "Free"
-}
-export const MOCK_MISSIONS: Mission[] = [ /* ~10–12 entries spanning London + Kent + Brighton */ ];
+- **Stays** — route, nav tab, page, generator hook all removed from UI. Keep `src/pages/Stays.tsx`, `useGeneratedStays`, `affiliate.ts`, `STAY_QUESTS`, and the `generate-stays` edge function on disk for v2; just unlink them. Also remove the "Stays" filter chip and stay category from the discover deck.
+- **Missions / Mission Builder** — same treatment. Keep `Mission*.tsx`, `missions.ts`, mission store actions, but hide the section on Discover and don't render the "Build a Mission" CTA. Mission data and store keys stay in localStorage so beta testers don't lose state when we re-enable.
+- **Discover social feed** ("Latest reviews", trending, groups) — pull the whole route. It's mock data with no actual social graph and dilutes the value prop. The new `/discover` becomes the quest deck (today's `/quests`).
+- **Saved stays, joined groups, badges that reference stays/missions** — hide on profile.
+
+## New IA
+
+```
+/                → redirect to /discover (or /onboarding)
+/onboarding      → unchanged
+/discover        → today's Quests page, renamed (swipe + browse)
+/active          → unchanged (journal + saved)
+/profile         → unchanged minus stay/mission stats
 ```
 
-**Mock missions to seed** (location-tagged so distance filter works the same way `Quests` page does):
+Bottom nav drops to **3 tabs**: Discover · Active · Profile. Cleaner thumb-reach, less cognitive load, signals focus.
 
-- 🍻 *Hidden Pub Hunt — Soho speakeasies* (London, approval, 6 spots)
-- 🏃 *Sunday Slow Run Club — Hackney Marshes 5k + coffee* (London, open, 15 spots)
-- 🏓 *Bounce Ping-Pong Takeover* (Shoreditch, open, 8 spots)
-- 🔥 *Park BBQ — London Fields golden hour* (London, open, 20 spots)
-- 🪓 *Axe-throwing & wings* (Vauxhall, approval, 6 spots)
-- 🌊 *Whitstable cold dip + chips* (Kent, open, 12 spots)
-- 🚴 *Richmond Park dawn loop* (London, open, 10 spots)
-- 🏰 *Castle climbing session + vegan brownie* (Stoke Newington, open, 8 spots)
-- 🛼 *Flippers Roller Disco crew night* (Olympia, approval, 10 spots)
-- 🎡 *Margate Old Town wander → Dreamland* (Kent, open, 12 spots)
-- ⚽ *Powerleague 5-a-side — pickup* (Bermondsey, approval, 10 spots)
-- 🍕 *Brockley Market crawl* (London, open, 15 spots)
+## Critical adaptations to launch (the investor list)
 
-Categories chosen to mirror the existing quest "vibe" framework (date-night, with-mates, outdoorsy, wild) so Missions feel native, not bolted on.
+These are the things that, left as-is, will cost us the demo:
 
-### 2. Location syncing
+1. **Photos are still flaky.** The image resolver leans on the dead `source.unsplash.com` endpoint and brittle og:image scraping. For an MVP that sells "discover real local activities," a quest tile with a generic stock photo is fatal. Fix: tiered resolver (Google Places Photos → Wikimedia → Unsplash official API → AI gen as last resort), cached server-side in a `venue_photos` table so we pay once per venue. Re-bake the hardcoded seed images using the same pipeline.
+2. **No real accounts.** Everything is localStorage. As soon as a tester clears their browser or opens on mobile, their journal vanishes. Investors will ask "where's retention measured?" Fix: Lovable Cloud auth (email + Google), migrate the `Profile` shape into a `profiles` + `active_quests` + `quest_photos` schema with RLS. Photos already upload to Storage; tie the rows to `auth.uid()`.
+3. **No analytics.** We can't show DAU, completion rate, or time-to-first-quest. Fix: minimal event log table (`events(user_id, name, props, ts)`) writing `quest_viewed`, `quest_accepted`, `quest_started`, `quest_completed`, `photo_added`. Three numbers on an internal dashboard = an investor story.
+4. **Onboarding-to-first-quest takes too many taps.** Today: name → avatar → place → radius → land on swiper. We can defer name/avatar to after the first quest is saved. Friction reduction is the cheapest growth lever.
+5. **No share artefact.** The most viral moment in this app is "I completed X" — and right now it dies in the user's journal. The `ShareCard` component exists but isn't wired up post-completion. Fix: after `completeQuest`, prompt with a generated share card (already half-built) for IG/WA. This is the loop that gives us free distribution.
+6. **AI quality is opaque.** When `generate-quests` returns junk, we silently fall back to seed data. Add a "Was this a good suggestion?" 👍/👎 per AI quest, logged for prompt-tuning.
+7. **Empty states are weak.** Active with 0 quests just says "Nothing active yet". Should push back to /discover with one-tap suggestions.
+8. **Brand/positioning.** App is called both "SideQuest" and "Questopia" across copy. Pick one before launch. Mention to user, don't decide unilaterally.
 
-Reuse the same pattern as the homepage Quests feed:
-- Read `profile.location` and `profile.radiusMiles` from `useProfile()`.
-- Filter `MOCK_MISSIONS` with `distanceMiles()` from `src/lib/geo.ts`.
-- Sort by ascending distance, then by `whenISO`.
-- If `radiusMiles === 9999`, show all.
-- Empty state: "No missions near {town} yet — try widening your radius."
+## Code changes for the MVP cut (just this turn's work)
 
-### 3. Store additions — `src/lib/store.ts`
+The investor-grade fixes above are follow-on work. This turn we only do the scope-back:
 
-```ts
-joinedMissions: string[];        // missions the user is "going" to
-requestedMissions: string[];     // missions the user has requested to join (pending)
-```
-Actions:
-```ts
-joinMission(missionId)           // open missions
-requestJoinMission(missionId)    // approval missions
-leaveMission(missionId)
-cancelMissionRequest(missionId)
-```
-Persist via existing localStorage layer. No backend yet (mock).
+- `src/App.tsx` — remove `/stays` route; rename `/quests` → `/discover`; the existing `/discover` (social feed) goes away. Add a redirect from `/quests` and old `/discover` for backwards-compat with bookmarks.
+- `src/components/BottomNav.tsx` — drop Stays + Discover (old) entries, end up with: Discover · Active · Profile.
+- `src/pages/Index.tsx` — redirect to `/discover` instead of `/quests`.
+- `src/pages/Quests.tsx` — rename header copy, drop the "Stays" category from `CATS`. Keep filename for now but route mounts it at `/discover`. (Filename rename can come later — risky to do in one go.)
+- `src/pages/Discover.tsx` (old social feed) — unmount from the router. Leave the file on disk; we'll come back to missions.
+- `src/pages/Profile.tsx` — remove the `stays` count derivation, drop badges that depend on stays/groups (or just hide the locked ones), keep memories + passport + streak.
+- `src/components/QuestSwiper.tsx` / `QuestDetailSheet.tsx` — no change beyond making sure no UI links into Stays/Missions.
+- Leave `src/lib/store.ts` alone — keeping `savedStays`, `joinedMissions`, etc. in state is harmless and avoids data loss on existing testers.
 
-### 4. UI — Discover page
+No DB changes this turn. No deletions of files — everything is reversible via a single PR.
 
-Rename the section heading "Open groups" → **"Missions"** with a subtitle:
-> *"Group side-quests near {town}. Hop in or pitch your own."*
+## Out of scope for this turn (next sprints)
 
-Replace the current 2-card group list with a Missions grid (one column on mobile, two from `md:` up). Each card shows:
-- Cover image with category emoji badge
-- Title + venue · city
-- When · distance pill (e.g. "Sat 2pm · 1.4 mi")
-- Owner avatar + "+N going" attendee stack
-- Visibility pill: "Open" (green) or "Approval" (amber)
-- Spots remaining: "3 of 8 spots left"
-- Tap card → opens `MissionSheet`
+- Real auth + cloud-persisted journal (sprint 2).
+- Photo resolver overhaul (sprint 2, separate plan already drafted).
+- Analytics events table + internal dashboard (sprint 3).
+- Share-card post-completion flow (sprint 3).
+- Re-enabling Stays once affiliate revenue model is signed off.
+- Re-enabling Missions once we have ≥100 weekly actives to populate them.
 
-Keep the existing groups data file (`src/data/groups.ts`) intact for now — only the *Discover section* swaps from groups to missions. Group profiles can return later.
+## Open questions before I build
 
-### 5. New component — `src/components/MissionSheet.tsx`
-
-A bottom Sheet (matches `QuestDetailSheet` styling) with three stacked blocks:
-
-1. **Hero** — cover image, title, when, venue + maps link, distance.
-2. **The Plan** — `<h3>The Plan</h3>` then the `thePlan` paragraph, "Bring" chip list, cost pill.
-3. **Crew** — owner ("Hosted by …"), attendee avatar grid with status, spots remaining bar.
-
-Footer CTA depends on visibility + state:
-
-| State                          | Open mission         | Approval mission           |
-|--------------------------------|----------------------|----------------------------|
-| Not joined / not requested     | "Join mission"       | "Request to Join"          |
-| Joined                         | "You're going ✓ — Leave" | n/a                    |
-| Requested (pending)            | n/a                  | "Request pending — Cancel" |
-| Owner                          | "You're hosting"     | "You're hosting · Manage"  |
-
-For the mock, "Manage" is a no-op toast saying "Approval inbox coming soon".
-
-### 6. Out of scope (intentionally)
-
-- No real auth / ownership — owner is mock data; the current user is never the owner.
-- No real approval inbox or notifications.
-- No mission creation flow (will follow once auth lands). The subtitle hints at it but no CTA.
-- No edits to `src/data/groups.ts` or other pages.
-
-### Files
-
-- **New**: `src/data/missions.ts`, `src/components/MissionSheet.tsx`
-- **Edit**: `src/lib/store.ts` (add joined/requested mission state + actions), `src/pages/Discover.tsx` (replace Open Groups block with Missions block, location-filtered)
+1. **Brand name** — lock "SideQuest" or "Questopia"? Affects copy in nav, onboarding, share cards.
+2. **Old `/discover` URL** — redirect it to the new quest deck (also `/discover`), or to `/active`? They're different surfaces today, so anyone who has it bookmarked will land somewhere new either way.
+3. **Confirm "hide, don't delete"** for Stays/Missions code — happy for me to keep the files in the tree so we can re-enable cleanly, or do you want them physically removed?
