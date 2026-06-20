@@ -134,8 +134,8 @@ function SwipeCard({
             onClick={isTop ? onTap : undefined}
             className="w-full rounded-2xl border-2 border-foreground bg-background/95 p-4 text-left shadow-sticker-sm backdrop-blur"
           >
-            <h3 className="font-display text-2xl leading-tight">{quest.title}</h3>
-            <p className="mt-0.5 text-sm font-semibold text-muted-foreground">{quest.venue} · {quest.city}</p>
+            <h3 className="font-display text-2xl leading-tight">{quest.venue}</h3>
+            <p className="mt-0.5 text-sm font-semibold text-muted-foreground">{quest.city}</p>
             <p className="mt-2 line-clamp-2 text-sm">{quest.blurb}</p>
             <div className="mt-3 flex items-center gap-3 text-xs font-semibold">
               <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5"/>{formatDuration(quest.durationMin)}</span>

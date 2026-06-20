@@ -172,14 +172,36 @@ async function validateImage(url: string): Promise<boolean> {
   return ct.startsWith("image/");
 }
 
-function unsplashFallback(category: string, venue: string, imageQuery?: string): string {
-  const tags = [imageQuery, CATEGORY_FALLBACK_TAGS[category] || category]
-    .filter(Boolean)
-    .join(",")
-    .replace(/\s+/g, "-");
-  const sig = Math.abs([...(venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0)) % 100000;
-  return `https://source.unsplash.com/featured/900x700/?${encodeURIComponent(tags)}&sig=${sig}`;
+async function unsplashSearch(query: string): Promise<string | null> {
+  const key = Deno.env.get("UNSPLASH_ACCESS_KEY");
+  if (!key) return null;
+  try {
+    const res = await safeFetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=5&orientation=landscape&content_filter=high`,
+      { headers: { Authorization: `Client-ID ${key}`, Accept: "application/json" } },
+      4000
+    );
+    if (!res || !res.ok) return null;
+    const json = await res.json();
+    const results: any[] = json?.results || [];
+    if (!results.length) return null;
+    const idx = Math.abs([...query].reduce((a, c) => a + c.charCodeAt(0), 0)) % Math.min(results.length, 5);
+    return results[idx]?.urls?.regular || results[0]?.urls?.regular || null;
+  } catch {
+    return null;
+  }
 }
+
+const FALLBACK_PHOTO_IDS: Record<string, string[]> = {
+  active:    ["1554068865-24cecd4e34b8", "1581094271901-8022df4466f9", "1540910419892-4a36d2c3266c"],
+  climb:     ["1522163182402-834f871fd851", "1583512603805-3cc6b41f3edb"],
+  nature:    ["1464822759023-fed622ff2c3b", "1500382017468-9049fed747ef"],
+  water:     ["1507525428034-b723cf961d3e", "1502780402662-acc01917cb52", "1504701954957-2010ec3bcec1"],
+  ride:      ["1517649763962-0c623066013b"],
+  foodie:    ["1559526324-c1f275fbfa32"],
+  nightlife: ["1581349485608-9469926a8e5e", "1578662996442-48f60103fc96"],
+  chill:     ["1564507592333-c60657eea523", "1536329832-aafd4f7cd4e3"],
+};
 
 async function resolveImage(q: any, category: string): Promise<string> {
   const cacheKey = `${q.venue || ""}|${q.city || ""}`;
@@ -208,8 +230,19 @@ async function resolveImage(q: any, category: string): Promise<string> {
     } catch {}
   }
 
-  // 3. Unsplash fallback
-  const fb = unsplashFallback(category, q.venue || "", q.imageQuery || q.imageKeyword);
+  // 3. Unsplash API search using the precise imageQuery field
+  const searchQuery = q.imageQuery || q.imageKeyword || `${q.venue} ${q.city}`;
+  const unsplashResult = await unsplashSearch(searchQuery);
+  if (unsplashResult) {
+    imageCache.set(cacheKey, unsplashResult);
+    return unsplashResult;
+  }
+
+  // 4. Static fallback — working Unsplash photo IDs (NOT the dead source.unsplash.com)
+  const ids = FALLBACK_PHOTO_IDS[category] || FALLBACK_PHOTO_IDS.chill;
+  const hash = Math.abs([...(q.venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0));
+  const id = ids[hash % ids.length];
+  const fb = `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=80`;
   imageCache.set(cacheKey, fb);
   return fb;
 }
@@ -244,6 +277,21 @@ Deno.serve(async (req) => {
 
     const sys = `You are a UK local-adventure curator who knows real venues. The user is near ${town}, ${region} (${lat},${lng}), within ${radiusMiles} miles. Area type: ${profile} — ${guide}
 
+ACTIVITY TYPES TO ALWAYS CHECK EXIST NEAR THE USER (never skip these categories when scouting):
+• Activity bars: mini golf bars (Puttshack, Swingers, Junkyard Golf), social darts (Flight Club, Boom Battle), axe throwing (Whistle Punks), ping pong bars (Bounce), pool/snooker halls (Poolhouse), shuffleboard, laser tag, rage rooms
+• Climbing & aerial: bouldering gyms, lead climbing centres, high ropes, Go Ape/treetop adventures, parkour gyms, aerial yoga studios
+• Racket & ball sports: padel courts, squash clubs, tennis with walk-in sessions, table tennis clubs, badminton
+• Golf: driving ranges (Topgolf, Golfzon, local ranges), crazy golf (outdoor and indoor), pitch & putt
+• Water: lidos (open-air pools), wild swimming spots, kayak/SUP/canoe hire, white water rafting, coasteering, sailing taster sessions, paddleboarding
+• Motorsports & speed: indoor go-karting, outdoor karting tracks, VR racing simulators
+• Bowling & entertainment: upscale bowling (All Star Lanes, Roxy Ball Room), bowling alleys, escape rooms, immersive experiences
+• Trampolining & gymnastics: Oxygen, Flip Out, Sky High trampoline parks, gymnastic open sessions
+• Art & craft: pottery studios (throw your own), life drawing nights, graffiti walls (legal), street art trails
+• Food & drink quests: food hall crawls, brewery taprooms, distillery tours, supper clubs, pop-up markets, secret restaurants
+• Viewpoints & nature: hills, ridgelines, canal towpaths, reservoir walks, forest trails, dark sky spots
+• Historic & cultural: castle grounds, abbey ruins, Victorian architecture walks, hidden courtyards, rooftop gardens
+• Wellness & recovery: outdoor saunas, cold plunge spots, park bootcamps, parkrun routes, wild foraging walks
+
 RULES:
 - Use ONLY real, currently-operating venues you are confident exist.
 - Maximise VARIETY: spread across at least 5 different categories. Never repeat the same vibe twice in a row.
@@ -252,7 +300,10 @@ RULES:
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
 - For each quest, ALWAYS include the venue's official website URL (websiteUrl) so we can fetch its real photo. If the venue is a landmark/museum/park with a Wikipedia page, also include wikipediaTitle.
-- imageQuery: a precise 3-5 word visual description of THIS specific venue (e.g. "neon mini golf interior", "candlelit speakeasy cocktail bar", "Hampstead Heath viewpoint sunset").
+
+CRITICAL NAMING RULE: The "venue" field must ALWAYS be the exact official name of the real place (e.g. "Chimera Climbing", "Puttshack Bank", "Parliament Hill Viewpoint", "Bewl Water Reservoir"). The "title" field must be a short punchy action tagline (e.g. "Tee off in neon", "Send the roof route", "Beat the city to the view"). NEVER swap these. NEVER invent a venue name.
+
+imageQuery: describe the INTERIOR or defining visual of THIS specific venue in 4–6 words. Be precise and visual. Examples: "neon mini golf bar interior", "bouldering gym with coloured holds", "wild swimming pond surrounded by trees", "social darts bar with glowing boards", "white water rapids outdoor rafting". Bad example: "activity fun sport" — too vague.
 
 Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"websiteUrl":"https://...","wikipediaTitle":"","imageQuery":""}]}.
 Return EXACTLY ${count} quests.`;
