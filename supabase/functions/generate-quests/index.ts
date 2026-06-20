@@ -277,6 +277,21 @@ Deno.serve(async (req) => {
 
     const sys = `You are a UK local-adventure curator who knows real venues. The user is near ${town}, ${region} (${lat},${lng}), within ${radiusMiles} miles. Area type: ${profile} — ${guide}
 
+ACTIVITY TYPES TO ALWAYS CHECK EXIST NEAR THE USER (never skip these categories when scouting):
+• Activity bars: mini golf bars (Puttshack, Swingers, Junkyard Golf), social darts (Flight Club, Boom Battle), axe throwing (Whistle Punks), ping pong bars (Bounce), pool/snooker halls (Poolhouse), shuffleboard, laser tag, rage rooms
+• Climbing & aerial: bouldering gyms, lead climbing centres, high ropes, Go Ape/treetop adventures, parkour gyms, aerial yoga studios
+• Racket & ball sports: padel courts, squash clubs, tennis with walk-in sessions, table tennis clubs, badminton
+• Golf: driving ranges (Topgolf, Golfzon, local ranges), crazy golf (outdoor and indoor), pitch & putt
+• Water: lidos (open-air pools), wild swimming spots, kayak/SUP/canoe hire, white water rafting, coasteering, sailing taster sessions, paddleboarding
+• Motorsports & speed: indoor go-karting, outdoor karting tracks, VR racing simulators
+• Bowling & entertainment: upscale bowling (All Star Lanes, Roxy Ball Room), bowling alleys, escape rooms, immersive experiences
+• Trampolining & gymnastics: Oxygen, Flip Out, Sky High trampoline parks, gymnastic open sessions
+• Art & craft: pottery studios (throw your own), life drawing nights, graffiti walls (legal), street art trails
+• Food & drink quests: food hall crawls, brewery taprooms, distillery tours, supper clubs, pop-up markets, secret restaurants
+• Viewpoints & nature: hills, ridgelines, canal towpaths, reservoir walks, forest trails, dark sky spots
+• Historic & cultural: castle grounds, abbey ruins, Victorian architecture walks, hidden courtyards, rooftop gardens
+• Wellness & recovery: outdoor saunas, cold plunge spots, park bootcamps, parkrun routes, wild foraging walks
+
 RULES:
 - Use ONLY real, currently-operating venues you are confident exist.
 - Maximise VARIETY: spread across at least 5 different categories. Never repeat the same vibe twice in a row.
@@ -285,7 +300,10 @@ RULES:
 - Vary durations from 30 min to 4 hrs.
 - Be specific (real bar names, real hike names, real museums).
 - For each quest, ALWAYS include the venue's official website URL (websiteUrl) so we can fetch its real photo. If the venue is a landmark/museum/park with a Wikipedia page, also include wikipediaTitle.
-- imageQuery: a precise 3-5 word visual description of THIS specific venue (e.g. "neon mini golf interior", "candlelit speakeasy cocktail bar", "Hampstead Heath viewpoint sunset").
+
+CRITICAL NAMING RULE: The "venue" field must ALWAYS be the exact official name of the real place (e.g. "Chimera Climbing", "Puttshack Bank", "Parliament Hill Viewpoint", "Bewl Water Reservoir"). The "title" field must be a short punchy action tagline (e.g. "Tee off in neon", "Send the roof route", "Beat the city to the view"). NEVER swap these. NEVER invent a venue name.
+
+imageQuery: describe the INTERIOR or defining visual of THIS specific venue in 4–6 words. Be precise and visual. Examples: "neon mini golf bar interior", "bouldering gym with coloured holds", "wild swimming pond surrounded by trees", "social darts bar with glowing boards", "white water rapids outdoor rafting". Bad example: "activity fun sport" — too vague.
 
 Return ONLY valid JSON, no markdown, in this exact shape: {"quests":[{"title":"","venue":"","city":"","region":"","address":"","lat":0,"lng":0,"category":"active|chill|foodie|water|climb|ride|nightlife|nature","blurb":"","description":"","durationMin":90,"randomness":3,"difficulty":1,"vibes":[""],"websiteUrl":"https://...","wikipediaTitle":"","imageQuery":""}]}.
 Return EXACTLY ${count} quests.`;
