@@ -50,6 +50,7 @@ export interface Profile {
   joinedMissions: string[];
   requestedMissions: string[];
   customMissions: Mission[];
+  questCache: Record<string, Quest>;
 }
 
 const KEY = "sidequest:v1";
