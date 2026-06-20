@@ -73,6 +73,7 @@ const initial: Profile = {
   joinedMissions: [],
   requestedMissions: [],
   customMissions: [],
+  questCache: {},
 };
 
 let state: Profile = load();
