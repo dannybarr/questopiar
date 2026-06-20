@@ -172,14 +172,36 @@ async function validateImage(url: string): Promise<boolean> {
   return ct.startsWith("image/");
 }
 
-function unsplashFallback(category: string, venue: string, imageQuery?: string): string {
-  const tags = [imageQuery, CATEGORY_FALLBACK_TAGS[category] || category]
-    .filter(Boolean)
-    .join(",")
-    .replace(/\s+/g, "-");
-  const sig = Math.abs([...(venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0)) % 100000;
-  return `https://source.unsplash.com/featured/900x700/?${encodeURIComponent(tags)}&sig=${sig}`;
+async function unsplashSearch(query: string): Promise<string | null> {
+  const key = Deno.env.get("UNSPLASH_ACCESS_KEY");
+  if (!key) return null;
+  try {
+    const res = await safeFetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=5&orientation=landscape&content_filter=high`,
+      { headers: { Authorization: `Client-ID ${key}`, Accept: "application/json" } },
+      4000
+    );
+    if (!res || !res.ok) return null;
+    const json = await res.json();
+    const results: any[] = json?.results || [];
+    if (!results.length) return null;
+    const idx = Math.abs([...query].reduce((a, c) => a + c.charCodeAt(0), 0)) % Math.min(results.length, 5);
+    return results[idx]?.urls?.regular || results[0]?.urls?.regular || null;
+  } catch {
+    return null;
+  }
 }
+
+const FALLBACK_PHOTO_IDS: Record<string, string[]> = {
+  active:    ["1554068865-24cecd4e34b8", "1581094271901-8022df4466f9", "1540910419892-4a36d2c3266c"],
+  climb:     ["1522163182402-834f871fd851", "1583512603805-3cc6b41f3edb"],
+  nature:    ["1464822759023-fed622ff2c3b", "1500382017468-9049fed747ef"],
+  water:     ["1507525428034-b723cf961d3e", "1502780402662-acc01917cb52", "1504701954957-2010ec3bcec1"],
+  ride:      ["1517649763962-0c623066013b"],
+  foodie:    ["1559526324-c1f275fbfa32"],
+  nightlife: ["1581349485608-9469926a8e5e", "1578662996442-48f60103fc96"],
+  chill:     ["1564507592333-c60657eea523", "1536329832-aafd4f7cd4e3"],
+};
 
 async function resolveImage(q: any, category: string): Promise<string> {
   const cacheKey = `${q.venue || ""}|${q.city || ""}`;
@@ -208,8 +230,19 @@ async function resolveImage(q: any, category: string): Promise<string> {
     } catch {}
   }
 
-  // 3. Unsplash fallback
-  const fb = unsplashFallback(category, q.venue || "", q.imageQuery || q.imageKeyword);
+  // 3. Unsplash API search using the precise imageQuery field
+  const searchQuery = q.imageQuery || q.imageKeyword || `${q.venue} ${q.city}`;
+  const unsplashResult = await unsplashSearch(searchQuery);
+  if (unsplashResult) {
+    imageCache.set(cacheKey, unsplashResult);
+    return unsplashResult;
+  }
+
+  // 4. Static fallback — working Unsplash photo IDs (NOT the dead source.unsplash.com)
+  const ids = FALLBACK_PHOTO_IDS[category] || FALLBACK_PHOTO_IDS.chill;
+  const hash = Math.abs([...(q.venue || category)].reduce((a, c) => a + c.charCodeAt(0), 0));
+  const id = ids[hash % ids.length];
+  const fb = `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=80`;
   imageCache.set(cacheKey, fb);
   return fb;
 }
