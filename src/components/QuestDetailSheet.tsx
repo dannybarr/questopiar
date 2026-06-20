@@ -26,8 +26,9 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
         </div>
         <div className="space-y-4 p-5">
           <SheetHeader className="space-y-1 text-left">
-            <SheetTitle className="font-display text-3xl">{quest.title}</SheetTitle>
-            <p className="text-sm font-semibold text-muted-foreground">{quest.venue} · {quest.city}, {quest.region}</p>
+            <SheetTitle className="font-display text-3xl">{quest.venue}</SheetTitle>
+            <p className="text-sm font-semibold text-muted-foreground">{quest.title}</p>
+            <p className="text-xs text-muted-foreground">{quest.city}, {quest.region}</p>
           </SheetHeader>
 
           <div className="flex flex-wrap gap-2 text-sm">
@@ -51,6 +52,17 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
           <div className="flex flex-wrap gap-1.5">
             {quest.vibes.map((v) => <span key={v} className="rounded-full bg-muted px-2 py-1 text-xs font-semibold">#{v}</span>)}
           </div>
+
+          {quest.websiteUrl && (
+            <a
+              href={quest.websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-2xl border-2 border-foreground bg-card p-4 text-center font-bold shadow-sticker-sm"
+            >
+              🌐 Visit Website
+            </a>
+          )}
 
           <a
             href={mapsUrl}
