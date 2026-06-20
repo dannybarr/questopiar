@@ -81,7 +81,7 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
               <Users className="mr-1 inline h-4 w-4"/> Bring a mate
             </button>
             <button
-              onClick={() => { acceptQuest(quest.id); celebrate("big"); toast("Quest started! 🚀"); onOpenChange(false); navigate("/active"); }}
+              onClick={() => { acceptQuest(quest); celebrate("big"); toast("Quest started! 🚀"); onOpenChange(false); navigate("/active"); }}
               className="rounded-2xl border-2 border-foreground bg-card p-4 font-bold shadow-sticker-sm sticker-tap"
             >
               <Sparkles className="mr-1 inline h-4 w-4"/> Accept
