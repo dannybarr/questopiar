@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import type { UKPlace } from "@/data/places";
 import type { Mission } from "@/data/missions";
+import { ALL_QUESTS, type Quest } from "@/data/quests";
 
 export type QuestStatus = "planned" | "in-progress" | "completed";
 
