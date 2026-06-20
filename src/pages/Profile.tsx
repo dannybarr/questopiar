@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useProfile, resetProfile } from "@/lib/store";
-import { ALL_QUESTS } from "@/data/quests";
+import { useProfile, resetProfile, resolveQuest } from "@/lib/store";
 import type { Quest } from "@/data/quests";
 import { BADGES } from "@/data/places";
 import { Flame, Trophy, MapPin, RotateCcw, Star } from "lucide-react";
