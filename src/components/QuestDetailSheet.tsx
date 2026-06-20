@@ -1,13 +1,15 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Quest } from "@/data/quests";
-import { useProfile, acceptQuest, startQuest } from "@/lib/store";
+import { useProfile, acceptQuest } from "@/lib/store";
 import { distanceMiles, formatDistance, formatDuration } from "@/lib/geo";
 import { MapPin, Clock, Zap, Users, Sparkles } from "lucide-react";
 import { celebrate } from "@/lib/confetti";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const profile = useProfile();
+  const navigate = useNavigate();
   if (!quest) return null;
   const dist = profile.location ? distanceMiles(profile.location, quest) : null;
   const mapsUrl = quest.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${quest.lat},${quest.lng}`;
@@ -67,14 +69,14 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
               <Users className="mr-1 inline h-4 w-4"/> Bring a mate
             </button>
             <button
-              onClick={() => { acceptQuest(quest.id); celebrate("big"); toast("Quest accepted! 🚀"); onOpenChange(false); }}
+              onClick={() => { acceptQuest(quest.id); celebrate("big"); toast("Quest started! 🚀"); onOpenChange(false); navigate("/active"); }}
               className="rounded-2xl border-2 border-foreground bg-card p-4 font-bold shadow-sticker-sm sticker-tap"
             >
               <Sparkles className="mr-1 inline h-4 w-4"/> Accept
             </button>
           </div>
           <button
-            onClick={() => { acceptQuest(quest.id); startQuest(quest.id); celebrate("big"); toast("Quest started! 🚀", { description: "Find it in Active." }); onOpenChange(false); }}
+            onClick={() => { acceptQuest(quest.id); celebrate("big"); toast("Quest started! 🚀", { description: "Find it in Active." }); onOpenChange(false); navigate("/active"); }}
             className="w-full rounded-2xl border-2 border-foreground bg-primary p-4 font-display text-lg text-primary-foreground shadow-sticker sticker-tap"
           >
             Start Quest

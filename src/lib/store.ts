@@ -111,11 +111,14 @@ export function useProfile(): Profile {
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function acceptQuest(questId: string) {
+  const now = Date.now();
   setProfile((p) => ({
     seenQuests: Array.from(new Set([...p.seenQuests, questId])),
     active: p.active.find((a) => a.questId === questId)
-      ? p.active
-      : [...p.active, { questId, status: "planned", acceptedAt: Date.now() }],
+      ? p.active.map((a) => a.questId === questId && a.status === "planned"
+          ? { ...a, status: "in-progress", startedAt: a.startedAt ?? now }
+          : a)
+      : [...p.active, { questId, status: "in-progress", acceptedAt: now, startedAt: now }],
   }));
 }
 export function skipQuest(questId: string) {
@@ -192,11 +195,14 @@ export function cancelMissionRequest(missionId: string) {
 
 // ----- Saved → Active -----
 export function moveSavedToActive(questId: string) {
+  const now = Date.now();
   setProfile((p) => ({
     savedQuests: p.savedQuests.filter((id) => id !== questId),
     active: p.active.find((a) => a.questId === questId)
-      ? p.active
-      : [...p.active, { questId, status: "planned", acceptedAt: Date.now() }],
+      ? p.active.map((a) => a.questId === questId && a.status === "planned"
+          ? { ...a, status: "in-progress", startedAt: a.startedAt ?? now }
+          : a)
+      : [...p.active, { questId, status: "in-progress", acceptedAt: now, startedAt: now }],
   }));
 }
 export function removeSaved(questId: string) {

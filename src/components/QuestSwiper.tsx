@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useTransform, AnimatePresence, PanInfo } from "framer-motion";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Quest } from "@/data/quests";
 import { useProfile, acceptQuest, skipQuest, saveForLater } from "@/lib/store";
 import { distanceMiles, formatDistance, formatDuration } from "@/lib/geo";
@@ -11,12 +12,19 @@ interface Props { quests: Quest[]; onEmpty?: () => void; onTap?: (q: Quest) => v
 
 export function QuestSwiper({ quests, onEmpty, onTap }: Props) {
   const profile = useProfile();
+  const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const visible = useMemo(() => quests.slice(index, index + 3), [quests, index]);
 
   const handleAction = (action: "accept" | "skip" | "save", q: Quest) => {
-    if (action === "accept") { acceptQuest(q.id); celebrate("small"); toast("Added to Active Quests", { description: q.title }); }
-    else if (action === "skip") { skipQuest(q.id); }
+    if (action === "accept") {
+      acceptQuest(q.id);
+      celebrate("small");
+      toast("Quest started! 🚀", { description: q.title });
+      navigate("/active");
+      return;
+    }
+    if (action === "skip") { skipQuest(q.id); }
     else { saveForLater(q.id); toast("Saved for later", { description: q.title }); }
     setIndex((i) => {
       const next = i + 1;
