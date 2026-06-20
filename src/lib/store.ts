@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import type { UKPlace } from "@/data/places";
 import type { Mission } from "@/data/missions";
+import { ALL_QUESTS, type Quest } from "@/data/quests";
 
 export type QuestStatus = "planned" | "in-progress" | "completed";
 
@@ -49,6 +50,7 @@ export interface Profile {
   joinedMissions: string[];
   requestedMissions: string[];
   customMissions: Mission[];
+  questCache: Record<string, Quest>;
 }
 
 const KEY = "sidequest:v1";
@@ -71,6 +73,7 @@ const initial: Profile = {
   joinedMissions: [],
   requestedMissions: [],
   customMissions: [],
+  questCache: {},
 };
 
 let state: Profile = load();
@@ -110,9 +113,23 @@ export function useProfile(): Profile {
 // Actions
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function acceptQuest(questId: string) {
+function cacheQuest(p: Profile, quest: Quest): Record<string, Quest> {
+  return { ...p.questCache, [quest.id]: quest };
+}
+
+export function rememberQuest(quest: Quest) {
+  setProfile((p) => ({ questCache: cacheQuest(p, quest) }));
+}
+
+export function resolveQuest(id: string): Quest | undefined {
+  return state.questCache[id] ?? ALL_QUESTS.find((q) => q.id === id);
+}
+
+export function acceptQuest(quest: Quest) {
   const now = Date.now();
+  const questId = quest.id;
   setProfile((p) => ({
+    questCache: cacheQuest(p, quest),
     seenQuests: Array.from(new Set([...p.seenQuests, questId])),
     active: p.active.find((a) => a.questId === questId)
       ? p.active.map((a) => a.questId === questId && a.status === "planned"
@@ -124,10 +141,11 @@ export function acceptQuest(questId: string) {
 export function skipQuest(questId: string) {
   setProfile((p) => ({ seenQuests: Array.from(new Set([...p.seenQuests, questId])) }));
 }
-export function saveForLater(questId: string) {
+export function saveForLater(quest: Quest) {
   setProfile((p) => ({
-    seenQuests: Array.from(new Set([...p.seenQuests, questId])),
-    savedQuests: Array.from(new Set([...p.savedQuests, questId])),
+    questCache: cacheQuest(p, quest),
+    seenQuests: Array.from(new Set([...p.seenQuests, quest.id])),
+    savedQuests: Array.from(new Set([...p.savedQuests, quest.id])),
   }));
 }
 export function startQuest(questId: string) {
@@ -194,9 +212,11 @@ export function cancelMissionRequest(missionId: string) {
 }
 
 // ----- Saved → Active -----
-export function moveSavedToActive(questId: string) {
+export function moveSavedToActive(quest: Quest) {
   const now = Date.now();
+  const questId = quest.id;
   setProfile((p) => ({
+    questCache: cacheQuest(p, quest),
     savedQuests: p.savedQuests.filter((id) => id !== questId),
     active: p.active.find((a) => a.questId === questId)
       ? p.active.map((a) => a.questId === questId && a.status === "planned"

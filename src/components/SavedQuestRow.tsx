@@ -14,7 +14,7 @@ export function SavedQuestRow({ quest }: { quest: Quest }) {
         <p className="line-clamp-1 text-[11px] text-muted-foreground">{quest.venue}</p>
       </div>
       <button
-        onClick={() => { moveSavedToActive(quest.id); toast.success("Quest started!"); navigate("/active"); }}
+        onClick={() => { moveSavedToActive(quest); toast.success("Quest started!"); navigate("/active"); }}
         className="inline-flex items-center gap-1 rounded-full border-2 border-foreground bg-electric px-3 py-1 text-xs font-bold shadow-sticker-sm sticker-tap"
       >
         <Plus className="h-3 w-3" strokeWidth={3}/> Active

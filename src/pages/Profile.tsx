@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useProfile, resetProfile } from "@/lib/store";
-import { ALL_QUESTS } from "@/data/quests";
+import { useProfile, resetProfile, resolveQuest } from "@/lib/store";
 import type { Quest } from "@/data/quests";
 import { BADGES } from "@/data/places";
 import { Flame, Trophy, MapPin, RotateCcw, Star } from "lucide-react";
@@ -66,7 +65,7 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-2 grid grid-cols-3 gap-3">
             {completed.map((a, i) => {
-              const q = ALL_QUESTS.find((x) => x.id === a.questId);
+              const q = resolveQuest(a.questId);
               if (!q) return null;
               const rot = (i * 137) % 11 - 5;
               return (
@@ -91,7 +90,7 @@ export default function ProfilePage() {
           return (
             <div className="mt-2 space-y-2">
               {memories.map((a) => {
-                const q = ALL_QUESTS.find((x) => x.id === a.questId);
+                const q = resolveQuest(a.questId);
                 if (!q) return null;
                 const hero = a.photos?.[0]?.url ?? q.image;
                 const noteExcerpt = a.notes?.slice(0, 80);
@@ -151,7 +150,7 @@ export default function ProfilePage() {
       <MemorySheet
         open={!!memoryQuestId}
         onOpenChange={(o) => !o && setMemoryQuestId(null)}
-        quest={memoryQuestId ? ALL_QUESTS.find((q) => q.id === memoryQuestId) ?? null : null}
+        quest={memoryQuestId ? resolveQuest(memoryQuestId) ?? null : null}
         active={memoryQuestId ? profile.active.find((a) => a.questId === memoryQuestId) ?? null : null}
       />
     </AppShell>
