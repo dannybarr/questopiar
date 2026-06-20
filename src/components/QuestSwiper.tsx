@@ -18,14 +18,14 @@ export function QuestSwiper({ quests, onEmpty, onTap }: Props) {
 
   const handleAction = (action: "accept" | "skip" | "save", q: Quest) => {
     if (action === "accept") {
-      acceptQuest(q.id);
+      acceptQuest(q);
       celebrate("small");
       toast("Quest started! 🚀", { description: q.title });
       navigate("/active");
       return;
     }
     if (action === "skip") { skipQuest(q.id); }
-    else { saveForLater(q.id); toast("Saved for later", { description: q.title }); }
+    else { saveForLater(q); toast("Saved for later", { description: q.title }); }
     setIndex((i) => {
       const next = i + 1;
       if (next >= quests.length) onEmpty?.();
