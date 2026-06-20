@@ -212,9 +212,11 @@ export function cancelMissionRequest(missionId: string) {
 }
 
 // ----- Saved → Active -----
-export function moveSavedToActive(questId: string) {
+export function moveSavedToActive(quest: Quest) {
   const now = Date.now();
+  const questId = quest.id;
   setProfile((p) => ({
+    questCache: cacheQuest(p, quest),
     savedQuests: p.savedQuests.filter((id) => id !== questId),
     active: p.active.find((a) => a.questId === questId)
       ? p.active.map((a) => a.questId === questId && a.status === "planned"
