@@ -5,8 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { QuestJournalCard } from "@/components/QuestJournalCard";
 import { SavedQuestRow } from "@/components/SavedQuestRow";
 import { MemorySheet } from "@/components/MemorySheet";
-import { useProfile } from "@/lib/store";
-import { ALL_QUESTS } from "@/data/quests";
+import { useProfile, resolveQuest } from "@/lib/store";
 import type { Quest } from "@/data/quests";
 
 export default function ActivePage() {
@@ -16,13 +15,13 @@ export default function ActivePage() {
 
   const activeList = profile.active.filter((a) => a.status !== "completed");
   const savedList = profile.savedQuests
-    .map((id) => ALL_QUESTS.find((q) => q.id === id))
+    .map((id) => resolveQuest(id))
     .filter((q): q is Quest => Boolean(q))
     // hide saved quests already promoted to active
     .filter((q) => !profile.active.some((a) => a.questId === q.id));
 
   const lastCompleted = profile.active.filter((a) => a.status === "completed").slice(-1)[0];
-  const lastQuest = lastCompleted ? ALL_QUESTS.find((q) => q.id === lastCompleted.questId) : null;
+  const lastQuest = lastCompleted ? resolveQuest(lastCompleted.questId) : null;
 
   return (
     <AppShell>
