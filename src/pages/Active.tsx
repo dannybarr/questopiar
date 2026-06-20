@@ -40,7 +40,7 @@ export default function ActivePage() {
         )}
         <AnimatePresence>
           {activeList.map((a) => {
-            const q = ALL_QUESTS.find((x) => x.id === a.questId);
+            const q = resolveQuest(a.questId);
             if (!q) return null;
             return (
               <motion.div key={a.questId} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -100 }}>
