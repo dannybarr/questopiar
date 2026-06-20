@@ -90,7 +90,7 @@ export default function ProfilePage() {
           return (
             <div className="mt-2 space-y-2">
               {memories.map((a) => {
-                const q = ALL_QUESTS.find((x) => x.id === a.questId);
+                const q = resolveQuest(a.questId);
                 if (!q) return null;
                 const hero = a.photos?.[0]?.url ?? q.image;
                 const noteExcerpt = a.notes?.slice(0, 80);
