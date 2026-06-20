@@ -150,7 +150,7 @@ export default function ProfilePage() {
       <MemorySheet
         open={!!memoryQuestId}
         onOpenChange={(o) => !o && setMemoryQuestId(null)}
-        quest={memoryQuestId ? ALL_QUESTS.find((q) => q.id === memoryQuestId) ?? null : null}
+        quest={memoryQuestId ? resolveQuest(memoryQuestId) ?? null : null}
         active={memoryQuestId ? profile.active.find((a) => a.questId === memoryQuestId) ?? null : null}
       />
     </AppShell>
