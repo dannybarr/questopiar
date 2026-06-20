@@ -83,9 +83,11 @@ export default function ProfilePage() {
       <section className="px-5 pt-5">
         <h2 className="font-display text-lg">Memories</h2>
         {(() => {
-          const memories = completed.filter((a) => (a.notes && a.notes.trim()) || (a.photos && a.photos.length) || (a.companions && a.companions.length) || (a.rating && a.rating > 0));
+          const memories = [...completed].sort(
+            (a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0),
+          );
           if (memories.length === 0) {
-            return <p className="mt-1 text-sm text-muted-foreground">Add notes, photos or tag friends on a quest and it'll show up here.</p>;
+            return <p className="mt-1 text-sm text-muted-foreground">Complete a quest and it'll show up here automatically — with your photos, notes and friends.</p>;
           }
           return (
             <div className="mt-2 space-y-2">
