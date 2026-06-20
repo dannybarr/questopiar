@@ -88,7 +88,7 @@ export function QuestDetailSheet({ quest, open, onOpenChange }: { quest: Quest |
             </button>
           </div>
           <button
-            onClick={() => { acceptQuest(quest.id); celebrate("big"); toast("Quest started! 🚀", { description: "Find it in Active." }); onOpenChange(false); navigate("/active"); }}
+            onClick={() => { acceptQuest(quest); celebrate("big"); toast("Quest started! 🚀", { description: "Find it in Active." }); onOpenChange(false); navigate("/active"); }}
             className="w-full rounded-2xl border-2 border-foreground bg-primary p-4 font-display text-lg text-primary-foreground shadow-sticker sticker-tap"
           >
             Start Quest
