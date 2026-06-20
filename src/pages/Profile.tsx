@@ -65,7 +65,7 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-2 grid grid-cols-3 gap-3">
             {completed.map((a, i) => {
-              const q = ALL_QUESTS.find((x) => x.id === a.questId);
+              const q = resolveQuest(a.questId);
               if (!q) return null;
               const rot = (i * 137) % 11 - 5;
               return (
