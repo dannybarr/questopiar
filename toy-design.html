@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toy World Design System</title>
+  <style>
+    /* ── Design Tokens ─────────────────────────────────── */
+    :root {
+      --space:        #08081f;
+      --space-mid:    #0d0d2e;
+      --space-light:  #141440;
+      --star-gold:    #f7b731;
+      --star-warm:    #ff9a3c;
+      --felt-cream:   #f0deb8;
+      --felt-tan:     #d4936b;
+      --felt-red:     #cc2a1e;
+      --felt-blue:    #2448a8;
+      --felt-teal:    #1a7a6e;
+      --felt-green:   #3d7a48;
+      --pill-bg:      rgba(10, 10, 20, 0.80);
+      --pill-border:  rgba(255,255,255,0.12);
+      --cta-bg:       #ffffff;
+      --cta-text:     #111;
+      --text-main:    #ffffff;
+      --text-muted:   rgba(255,255,255,0.55);
+
+      --radius-pill:  999px;
+      --radius-card:  28px;
+      --felt-shadow:  0 4px 0 rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6);
+      --glow-gold:    0 0 24px rgba(247,183,49,0.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--space);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Star field ──────────────────────────────────────── */
+    .starfield {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      color: var(--star-gold);
+      user-select: none;
+      animation: twinkle var(--dur, 3s) ease-in-out infinite var(--delay, 0s);
+      opacity: 0.8;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.8; transform: scale(1) rotate(0deg); }
+      50%       { opacity: 0.3; transform: scale(0.7) rotate(20deg); }
+    }
+
+    /* ── Layout helpers ──────────────────────────────────── */
+    .page-content { position: relative; z-index: 1; }
+
+    section {
+      padding: 80px 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .brand {
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .brand em {
+      font-style: normal;
+      font-weight: 800;
+      color: var(--felt-cream);
+    }
+    .brand .prefix {
+      color: var(--text-muted);
+      font-weight: 200;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2.5vw, 20px);
+      color: var(--text-muted);
+      max-width: 480px;
+      line-height: 1.6;
+      margin-bottom: 40px;
+    }
+
+    /* ── Pill badges ─────────────────────────────────────── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      border-radius: var(--radius-pill);
+      padding: 8px 18px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #fff;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      white-space: nowrap;
+    }
+    .pill-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--star-gold);
+      flex-shrink: 0;
+    }
+    .pills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    /* ── CTA button ──────────────────────────────────────── */
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--cta-bg);
+      color: var(--cta-text);
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 14px 28px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      text-decoration: none;
+    }
+    .cta:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .cta:active { transform: translateY(0) scale(0.99); }
+    .cta-icon {
+      width: 24px; height: 24px;
+      background: #ddd;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    /* ── Felt card ───────────────────────────────────────── */
+    .felt-card {
+      position: relative;
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      background: var(--space-mid);
+      box-shadow: var(--felt-shadow);
+    }
+    .felt-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 2px,
+          rgba(255,255,255,0.012) 2px,
+          rgba(255,255,255,0.012) 4px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+    .felt-card-body {
+      position: relative;
+      z-index: 2;
+      padding: 32px;
+    }
+
+    /* ── Scene cards ─────────────────────────────────────── */
+    .scenes {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .scene {
+      position: relative;
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      aspect-ratio: 9/14;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .scene:hover { transform: scale(1.02); }
+
+    .scene-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* Space scene */
+    .scene-space .scene-bg {
+      background: radial-gradient(ellipse at 50% 30%, #1a1a4a 0%, var(--space) 70%);
+    }
+
+    /* Ocean scene */
+    .scene-ocean .scene-bg {
+      background: linear-gradient(180deg, #0a0a28 0%, #0d1a4a 40%, #1a3a6e 70%, #2448a8 100%);
+    }
+
+    /* Felt scene */
+    .scene-felt .scene-bg {
+      background: linear-gradient(180deg, #07071a 0%, #12122e 40%, #1a1a40 100%);
+    }
+
+    .scene-content {
+      position: relative;
+      z-index: 3;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 24px;
+    }
+
+    .scene-label {
+      background: rgba(10,10,20,0.82);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius-pill);
+      padding: 7px 16px;
+      font-size: 15px;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .scene-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      color: #111;
+      border-radius: var(--radius-pill);
+      padding: 11px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.15s;
+    }
+    .scene-cta:hover { transform: scale(1.03); }
+
+    /* ── Scene illustrations (CSS art) ────────────────────── */
+
+    /* Rocket */
+    .rocket-wrap {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .rocket {
+      width: 48px;
+      height: 80px;
+      background: linear-gradient(180deg, #e8e0d0 0%, #c8bba0 100%);
+      border-radius: 50% 50% 8px 8px;
+      position: relative;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+      margin: 0 auto;
+    }
+    .rocket::before {
+      content: '';
+      position: absolute;
+      top: 12px; left: 50%;
+      transform: translateX(-50%);
+      width: 18px; height: 18px;
+      background: #88ccff;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .rocket-flame {
+      width: 24px;
+      height: 40px;
+      background: linear-gradient(180deg, #ff9a3c, #ff5500, transparent);
+      border-radius: 0 0 50% 50%;
+      margin: 0 auto;
+      animation: flicker 0.2s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+    @keyframes flicker {
+      from { transform: scaleX(1) scaleY(1); opacity: 1; }
+      to   { transform: scaleX(0.8) scaleY(1.1); opacity: 0.85; }
+    }
+
+    /* Moon surface */
+    .moon-surface {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 100px;
+      background: linear-gradient(180deg, #2a2a3a 0%, #1a1a28 100%);
+      z-index: 1;
+      border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+    }
+    .moon-surface::before {
+      content: '';
+      position: absolute;
+      top: 10px; left: 20%;
+      width: 30px; height: 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 50%;
+    }
+
+    /* Astronaut bear */
+    .astronaut-wrap {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%      { transform: translateX(-50%) translateY(-8px); }
+    }
+    .astronaut-helmet {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, #f0ece0 0%, #d8d0c0 100%);
+      border-radius: 50%;
+      position: relative;
+      box-shadow:
+        inset -4px -4px 8px rgba(0,0,0,0.2),
+        2px 2px 0 rgba(0,0,0,0.35);
+      margin: 0 auto;
+    }
+    .astronaut-visor {
+      position: absolute;
+      top: 14px; left: 12px;
+      width: 36px; height: 28px;
+      background: linear-gradient(135deg, #1a3a5c 0%, #0d2040 100%);
+      border-radius: 50%;
+      box-shadow: inset 2px 2px 4px rgba(255,255,255,0.15);
+    }
+    .astronaut-visor::after {
+      content: '';
+      position: absolute;
+      top: 5px; left: 6px;
+      width: 10px; height: 7px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+    }
+    .astronaut-body {
+      width: 52px; height: 44px;
+      background: linear-gradient(180deg, #f0ece0 0%, #ddd4c0 100%);
+      border-radius: 16px 16px 8px 8px;
+      margin: 0 auto;
+      position: relative;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+    }
+    .astronaut-badge {
+      position: absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 18px; height: 14px;
+      background: var(--felt-red);
+      border-radius: 4px;
+    }
+    .astronaut-legs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .astronaut-leg {
+      width: 16px; height: 24px;
+      background: linear-gradient(180deg, #e0d8c8 0%, #c8c0b0 100%);
+      border-radius: 6px 6px 8px 8px;
+      box-shadow: 1px 1px 0 rgba(0,0,0,0.35);
+    }
+
+    /* Felt wave scene */
+    .wave-scene {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 160px;
+      z-index: 1;
+    }
+    .wave {
+      position: absolute;
+      bottom: 0; left: -20px; right: -20px;
+      height: 80px;
+      border-radius: 50% 50% 0 0;
+    }
+    .wave-1 {
+      background: #2a5ca8;
+      bottom: 40px;
+      border-radius: 60% 60% 0 0;
+    }
+    .wave-2 {
+      background: #1a4a8a;
+      bottom: 0;
+    }
+
+    /* Toy boat */
+    .boat-wrap {
+      position: absolute;
+      bottom: 80px;
+      z-index: 2;
+      animation: bob 2.5s ease-in-out infinite;
+    }
+    .boat-wrap.left  { left: 10%; }
+    .boat-wrap.right { right: 10%; }
+    @keyframes bob {
+      0%,100% { transform: rotate(-2deg) translateY(0); }
+      50%      { transform: rotate(2deg)  translateY(-4px); }
+    }
+    .boat-hull {
+      width: 50px; height: 20px;
+      background: var(--felt-red);
+      border-radius: 0 0 14px 14px;
+      position: relative;
+    }
+    .boat-cabin {
+      width: 28px; height: 20px;
+      background: #f5f0e8;
+      border-radius: 6px 6px 0 0;
+      margin: 0 auto;
+      position: absolute;
+      top: -18px; left: 50%;
+      transform: translateX(-50%);
+    }
+    .boat-window {
+      width: 8px; height: 8px;
+      background: #88ccff;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .boat-flag {
+      width: 2px; height: 16px;
+      background: #888;
+      position: absolute;
+      top: -34px; right: 4px;
+    }
+    .boat-flag::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 2px;
+      width: 10px; height: 7px;
+      background: var(--felt-red);
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+
+    /* Center capsule / egg on boat */
+    .capsule {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+    .capsule-body {
+      width: 44px; height: 54px;
+      background: linear-gradient(180deg, #f0ece0 0%, #ddd4c0 100%);
+      border-radius: 50% 50% 40% 40%;
+      position: relative;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.35),
+                  inset -3px -3px 6px rgba(0,0,0,0.15);
+    }
+    .capsule-face {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .capsule-eyes {
+      display: flex;
+      gap: 8px;
+    }
+    .capsule-eye {
+      width: 8px; height: 8px;
+      background: #3a2a1a;
+      border-radius: 50%;
+    }
+
+    /* Planet */
+    .planet-wrap {
+      position: absolute;
+      top: 20%;
+      right: -20px;
+      z-index: 1;
+    }
+    .planet {
+      width: 120px; height: 120px;
+      background: radial-gradient(circle at 35% 35%, #3a7aaa, #0d2a4a);
+      border-radius: 50%;
+      box-shadow: inset -12px -12px 24px rgba(0,0,0,0.5),
+                  0 0 40px rgba(0,80,160,0.25);
+    }
+    .planet-ring {
+      width: 160px; height: 24px;
+      border: 4px solid rgba(180,160,120,0.5);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotateX(70deg);
+    }
+
+    /* Earth */
+    .earth-wrap {
+      position: absolute;
+      top: 10%;
+      left: -30px;
+      z-index: 1;
+    }
+    .earth {
+      width: 140px; height: 140px;
+      background: radial-gradient(circle at 35% 35%, #2a6a40 20%, #1a4a8a 60%, #0a2a60 100%);
+      border-radius: 50%;
+      box-shadow: inset -14px -14px 28px rgba(0,0,0,0.45),
+                  0 0 50px rgba(30,80,160,0.2);
+      position: relative;
+    }
+    .earth::before {
+      content: '';
+      position: absolute;
+      top: 15%; left: 10%;
+      width: 40%; height: 35%;
+      background: rgba(50,180,80,0.6);
+      border-radius: 40% 60% 40% 60%;
+    }
+    .earth::after {
+      content: '';
+      position: absolute;
+      bottom: 20%; right: 15%;
+      width: 30%; height: 25%;
+      background: rgba(50,180,80,0.5);
+      border-radius: 50%;
+    }
+
+    /* ── Typography showcase ─────────────────────────────── */
+    .type-showcase {
+      display: grid;
+      gap: 32px;
+    }
+
+    .type-hero {
+      font-size: clamp(40px, 8vw, 80px);
+      font-weight: 300;
+      line-height: 1;
+    }
+    .type-hero strong {
+      font-weight: 800;
+      color: var(--felt-cream);
+    }
+
+    /* ── Color palette ───────────────────────────────────── */
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .swatch-color {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .swatch-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ── Section header ──────────────────────────────────── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--star-gold);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 40px;
+    }
+    .section-title strong { font-weight: 800; color: var(--felt-cream); }
+
+    /* ── Interactive elements grid ───────────────────────── */
+    .elements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .element-card {
+      background: var(--space-mid);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .element-label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Star scatter decoration ─────────────────────────── */
+    .scene-stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .s-star {
+      position: absolute;
+      color: var(--star-gold);
+      font-size: var(--sz, 14px);
+      opacity: var(--op, 0.7);
+    }
+
+    /* ── Divider ─────────────────────────────────────────── */
+    .divider {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      margin: 0;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,8,31,0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand strong { font-weight: 800; }
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: #fff; }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .scenes { grid-template-columns: 1fr; }
+      .scene { aspect-ratio: 9/12; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Star field background -->
+<div class="starfield" id="starfield" aria-hidden="true"></div>
+
+<nav>
+  <div class="nav-brand"><strong>Toy</strong>World</div>
+  <ul class="nav-links">
+    <li><a href="#scenes">Scenes</a></li>
+    <li><a href="#elements">Elements</a></li>
+    <li><a href="#palette">Palette</a></li>
+  </ul>
+  <a href="#" class="cta" style="padding:9px 20px;font-size:14px;">
+    <span class="cta-icon">✦</span> Get started
+  </a>
+</nav>
+
+<div class="page-content">
+
+  <!-- ── Hero ────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="pills-row">
+      <span class="pill"><span class="pill-dot"></span>Playful</span>
+      <span class="pill"><span class="pill-dot"></span>Handcrafted</span>
+      <span class="pill"><span class="pill-dot"></span>Felt &amp; Toy worlds</span>
+    </div>
+
+    <h1 class="brand">
+      <span class="prefix">a </span><em>toy</em>world<br>
+      <span class="prefix">design </span><em>system</em>
+    </h1>
+
+    <p class="hero-sub">
+      A design language inspired by handcrafted miniature worlds — felt textures,
+      plush astronauts, toy boats, and deep starfields.
+    </p>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+      <a href="#scenes" class="cta">
+        <span class="cta-icon">🔗</span> Explore scenes
+      </a>
+      <a href="#elements" class="cta" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.15);">
+        View elements
+      </a>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── Scenes ───────────────────────────────────────────── -->
+  <section id="scenes">
+    <p class="section-label">Scenes</p>
+    <h2 class="section-title">Miniature <strong>worlds</strong></h2>
+
+    <div class="scenes">
+
+      <!-- Space / Rocket -->
+      <div class="felt-card scene scene-space">
+        <div class="scene-bg"></div>
+
+        <!-- Stars -->
+        <div class="scene-stars" id="space-stars"></div>
+
+        <!-- Moon surface -->
+        <div class="moon-surface"></div>
+
+        <!-- Rocket -->
+        <div class="rocket-wrap">
+          <div class="rocket"></div>
+          <div class="rocket-flame"></div>
+        </div>
+
+        <div class="scene-content">
+          <span class="scene-label">giant leap</span>
+          <a href="#" class="scene-cta">
+            <span style="width:20px;height:20px;background:#ddd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">🔗</span>
+            Learn more
+          </a>
+        </div>
+      </div>
+
+      <!-- Ocean / Boats -->
+      <div class="felt-card scene scene-ocean">
+        <div class="scene-bg"></div>
+
+        <div class="scene-stars" id="ocean-stars"></div>
+
+        <!-- Waves -->
+        <div class="wave-scene">
+          <div class="wave wave-1"></div>
+          <div class="wave wave-2"></div>
+        </div>
+
+        <!-- Toy boats -->
+        <div class="boat-wrap left">
+          <div class="boat-hull">
+            <div class="boat-cabin">
+              <div class="boat-window"></div>
+            </div>
+            <div class="boat-flag"></div>
+          </div>
+        </div>
+        <div class="boat-wrap right" style="animation-delay:-1.2s">
+          <div class="boat-hull" style="background:#2448a8">
+            <div class="boat-cabin">
+              <div class="boat-window"></div>
+            </div>
+            <div class="boat-flag"></div>
+          </div>
+        </div>
+
+        <!-- Capsule/egg -->
+        <div class="capsule">
+          <div class="capsule-body">
+            <div class="capsule-face">
+              <div class="capsule-eyes">
+                <div class="capsule-eye"></div>
+                <div class="capsule-eye"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scene-content">
+          <span class="scene-label">set sail</span>
+          <a href="#" class="scene-cta">
+            <span style="width:20px;height:20px;background:#ddd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">🔗</span>
+            Learn more
+          </a>
+        </div>
+      </div>
+
+      <!-- Deep space / Astronaut -->
+      <div class="felt-card scene scene-felt">
+        <div class="scene-bg"></div>
+
+        <div class="scene-stars" id="felt-stars"></div>
+
+        <!-- Earth -->
+        <div class="earth-wrap">
+          <div class="earth"></div>
+        </div>
+
+        <!-- Astronaut -->
+        <div class="astronaut-wrap">
+          <div class="astronaut-helmet">
+            <div class="astronaut-visor"></div>
+          </div>
+          <div class="astronaut-body">
+            <div class="astronaut-badge"></div>
+          </div>
+          <div class="astronaut-legs">
+            <div class="astronaut-leg"></div>
+            <div class="astronaut-leg"></div>
+          </div>
+        </div>
+
+        <div class="scene-content">
+          <span class="scene-label">explore</span>
+          <a href="#" class="scene-cta">
+            <span style="width:20px;height:20px;background:#ddd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">🔗</span>
+            Learn more
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── UI Elements ──────────────────────────────────────── -->
+  <section id="elements">
+    <p class="section-label">Elements</p>
+    <h2 class="section-title">Design <strong>components</strong></h2>
+
+    <div class="elements-grid">
+
+      <!-- Pills -->
+      <div class="element-card">
+        <span class="element-label">Pill badges</span>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <span class="pill"><span class="pill-dot"></span>generate</span>
+          <span class="pill"><span class="pill-dot" style="background:#ff9a3c"></span>unleash</span>
+          <span class="pill"><span class="pill-dot" style="background:#88ccff"></span>combine</span>
+        </div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="element-card">
+        <span class="element-label">Buttons</span>
+        <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+          <a href="#" class="cta" style="width:100%;justify-content:center;font-size:15px;">
+            <span class="cta-icon">🔗</span> Primary CTA
+          </a>
+          <a href="#" class="cta" style="width:100%;justify-content:center;font-size:15px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.15);">
+            Secondary
+          </a>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="element-card" style="grid-column:span 2;">
+        <span class="element-label">Typography</span>
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%">
+          <div style="font-size:36px;font-weight:300;line-height:1">
+            <span style="color:var(--text-muted)">a </span><strong style="font-weight:800;color:var(--felt-cream)">bold</strong><span style="color:var(--text-muted)"> idea</span>
+          </div>
+          <div style="font-size:22px;font-weight:300;color:var(--text-muted)">
+            Light weight pairs with <strong style="font-weight:800;color:#fff">heavy weight</strong>
+          </div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6">
+            Body text stays quiet — letting the bold headlines carry the weight
+            while keeping things airy and readable.
+          </div>
+        </div>
+      </div>
+
+      <!-- Stars -->
+      <div class="element-card">
+        <span class="element-label">Star accents</span>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <span style="color:var(--star-gold);font-size:28px;">★</span>
+          <span style="color:var(--star-gold);font-size:20px;opacity:0.7">★</span>
+          <span style="color:var(--star-warm);font-size:14px;opacity:0.9">★</span>
+          <span style="color:var(--star-gold);font-size:10px;opacity:0.6">★</span>
+          <span style="color:#fff;font-size:8px;opacity:0.4">★</span>
+        </div>
+      </div>
+
+      <!-- Felt swatch -->
+      <div class="element-card">
+        <span class="element-label">Felt texture</span>
+        <div style="
+          width:100%;height:80px;
+          background:linear-gradient(135deg,#f0deb8 0%,#d4936b 100%);
+          border-radius:16px;
+          box-shadow:
+            inset 0 2px 4px rgba(255,255,255,0.35),
+            0 4px 0 rgba(0,0,0,0.45);
+          background-image:
+            repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 6px),
+            linear-gradient(135deg,#f0deb8 0%,#d4936b 100%);
+        "></div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── Palette ──────────────────────────────────────────── -->
+  <section id="palette">
+    <p class="section-label">Color Palette</p>
+    <h2 class="section-title">The <strong>palette</strong></h2>
+
+    <div class="palette">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#08081f"></div>
+        <span class="swatch-label">Space<br>#08081f</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0d0d2e"></div>
+        <span class="swatch-label">Deep<br>#0d0d2e</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f7b731"></div>
+        <span class="swatch-label">Star Gold<br>#f7b731</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#ff9a3c"></div>
+        <span class="swatch-label">Star Warm<br>#ff9a3c</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f0deb8"></div>
+        <span class="swatch-label">Felt Cream<br>#f0deb8</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#d4936b"></div>
+        <span class="swatch-label">Felt Tan<br>#d4936b</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#cc2a1e"></div>
+        <span class="swatch-label">Toy Red<br>#cc2a1e</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2448a8"></div>
+        <span class="swatch-label">Toy Blue<br>#2448a8</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#88ccff"></div>
+        <span class="swatch-label">Sky<br>#88ccff</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer style="text-align:center;padding:60px 24px;color:var(--text-muted);font-size:13px;border-top:1px solid rgba(255,255,255,0.06);">
+    <div class="nav-brand" style="justify-content:center;margin-bottom:12px;display:flex">
+      <strong>Toy</strong><span>World</span>
+    </div>
+    A playful design system inspired by felt, fabric, and miniature worlds.
+  </footer>
+
+</div><!-- /page-content -->
+
+<script>
+  // ── Generate star field ────────────────────────────────
+  function createStars(container, count) {
+    const sizes   = [8, 10, 12, 14, 16, 20, 24];
+    const opacities = [0.4, 0.55, 0.65, 0.75, 0.85, 0.9];
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('span');
+      el.className = 's-star';
+      const size = sizes[Math.floor(Math.random() * sizes.length)];
+      const op   = opacities[Math.floor(Math.random() * opacities.length)];
+      el.style.cssText = `
+        left:${Math.random()*100}%;
+        top:${Math.random()*100}%;
+        --sz:${size}px;
+        --op:${op};
+        --dur:${2 + Math.random()*3}s;
+        --delay:-${Math.random()*3}s;
+        font-size:${size}px;
+        opacity:${op};
+        animation: twinkle ${2+Math.random()*3}s ease-in-out infinite ${-Math.random()*3}s;
+      `;
+      el.textContent = '★';
+      container.appendChild(el);
+    }
+  }
+
+  // Background starfield
+  const sf = document.getElementById('starfield');
+  createStars(sf, 80);
+
+  // Per-scene stars
+  createStars(document.getElementById('space-stars'), 18);
+  createStars(document.getElementById('ocean-stars'), 14);
+  createStars(document.getElementById('felt-stars'), 22);
+</script>
+</body>
+</html>
