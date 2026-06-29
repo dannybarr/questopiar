@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Services for Venture Capital — Strategic Intelligence Brief</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #080c14;
+    --bg2: #0d1220;
+    --bg3: #111927;
+    --card: #0f1823;
+    --card-hover: #141f2e;
+    --border: #1e2d42;
+    --border-bright: #2a4060;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --accent3: #8b5cf6;
+    --accent4: #10b981;
+    --accent5: #f59e0b;
+    --accent6: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --glow: rgba(59,130,246,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* ── Navigation ── */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    background: rgba(8,12,20,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-logo span { color: var(--text2); font-weight: 400; }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    color: var(--text2); text-decoration: none; font-size: 0.8rem;
+    font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: white; font-size: 0.7rem; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px; letter-spacing: 0.08em;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 100px 2rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%);
+  }
+  .hero-glow {
+    position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(59,130,246,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-glow2 {
+    position: absolute; top: 40%; left: 20%;
+    width: 400px; height: 300px;
+    background: radial-gradient(ellipse, rgba(139,92,246,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: var(--accent); letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid rgba(59,130,246,0.3);
+    background: rgba(59,130,246,0.08);
+    padding: 6px 16px; border-radius: 20px;
+    margin-bottom: 2rem; display: inline-block;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 4.2rem);
+    font-weight: 900; line-height: 1.1;
+    text-align: center; max-width: 900px;
+    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 60%, #3b82f6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+  }
+  .hero p {
+    font-size: 1.15rem; color: var(--text2); text-align: center;
+    max-width: 680px; font-weight: 400; line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+  .hero-metrics {
+    display: flex; gap: 3rem; margin-bottom: 3rem;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .hero-metric { text-align: center; }
+  .hero-metric .num {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-metric .lbl { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .hero-cta {
+    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+  }
+  .btn {
+    padding: 12px 28px; border-radius: 8px; font-size: 0.9rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    color: white; border: none;
+    box-shadow: 0 0 30px rgba(59,130,246,0.3);
+  }
+  .btn-primary:hover { box-shadow: 0 0 50px rgba(59,130,246,0.5); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border-bright);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.05); }
+
+  /* ── Section ── */
+  section { padding: 6rem 2rem; max-width: 1300px; margin: 0 auto; }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--accent); letter-spacing: 0.2em;
+    text-transform: uppercase; margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800; line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-sub {
+    color: var(--text2); max-width: 600px; font-size: 1rem; line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  /* ── Stack Overview ── */
+  .stack-diagram {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem;
+    margin-bottom: 2rem; position: relative; overflow: hidden;
+  }
+  .stack-diagram::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2));
+  }
+  .stack-layers { display: flex; flex-direction: column; gap: 1rem; }
+  .stack-layer {
+    display: flex; align-items: center; gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg3); border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+    cursor: default;
+  }
+  .stack-layer:hover { border-color: var(--border-bright); }
+  .layer-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .layer-content { flex: 1; }
+  .layer-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .layer-desc { font-size: 0.8rem; color: var(--text2); }
+  .layer-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .tag {
+    font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .tag-blue { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.2); }
+  .tag-purple { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.2); }
+  .tag-green { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+  .tag-amber { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+  .tag-red { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+  .tag-cyan { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.2); }
+  .layer-roi {
+    text-align: right; flex-shrink: 0;
+  }
+  .roi-num { font-size: 1.1rem; font-weight: 800; color: var(--accent4); }
+  .roi-lbl { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── Service Cards Grid ── */
+  .services-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.5rem; margin-top: 2rem;
+  }
+  .service-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.75rem;
+    transition: all 0.25s; cursor: default;
+    position: relative; overflow: hidden;
+  }
+  .service-card::after {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(ellipse at top left, var(--glow), transparent 60%);
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .service-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+  .service-card:hover::after { opacity: 1; }
+  .card-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+  .card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+  }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .card-category { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .card-desc { font-size: 0.875rem; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+  .card-features { list-style: none; margin-bottom: 1.25rem; }
+  .card-features li {
+    font-size: 0.8rem; color: var(--text2);
+    padding: 0.3rem 0; padding-left: 1.25rem; position: relative;
+  }
+  .card-features li::before {
+    content: '→'; position: absolute; left: 0; color: var(--accent); font-size: 0.75rem;
+  }
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 1rem; border-top: 1px solid var(--border);
+    flex-wrap: wrap; gap: 0.5rem;
+  }
+  .card-price {
+    font-size: 0.8rem; font-weight: 600; color: var(--accent4);
+  }
+  .complexity-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .complexity-label { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .complexity-dots { display: flex; gap: 3px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); }
+  .dot.filled { background: var(--accent5); }
+
+  /* ── Big Feature Highlight ── */
+  .feature-highlight {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 3rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+    align-items: center; margin: 2rem 0; position: relative; overflow: hidden;
+  }
+  .feature-highlight::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent3), transparent);
+  }
+  .fh-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .fh-title { font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem; }
+  .fh-desc { color: var(--text2); line-height: 1.7; margin-bottom: 1.5rem; }
+  .fh-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .fh-stat {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem;
+  }
+  .fh-stat-num { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+  .fh-stat-lbl { font-size: 0.72rem; color: var(--text3); margin-top: 0.2rem; }
+  .fh-visual {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    line-height: 1.8; color: var(--text2);
+    position: relative; overflow: hidden;
+  }
+  .fh-visual-title {
+    font-size: 0.65rem; color: var(--text3); letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 1rem; padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .code-line { display: flex; gap: 1rem; }
+  .code-key { color: var(--accent2); }
+  .code-val { color: var(--accent4); }
+  .code-val.red { color: #f87171; }
+  .code-val.amber { color: var(--accent5); }
+  .code-val.dim { color: var(--text3); }
+  .cursor {
+    display: inline-block; width: 8px; height: 14px;
+    background: var(--accent); animation: blink 1s infinite; vertical-align: middle;
+  }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+  /* ── Workflow Pipeline ── */
+  .pipeline {
+    display: flex; gap: 0; align-items: center;
+    margin: 2rem 0; overflow-x: auto; padding-bottom: 1rem;
+  }
+  .pipeline-step {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.25rem;
+    min-width: 160px; text-align: center; flex-shrink: 0;
+    position: relative;
+  }
+  .pipeline-step .step-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .pipeline-step .step-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .pipeline-step .step-sub { font-size: 0.68rem; color: var(--text3); }
+  .pipeline-arrow {
+    color: var(--accent); font-size: 1.2rem; padding: 0 0.5rem; flex-shrink: 0;
+  }
+  .pipeline-step.ai-step {
+    border-color: rgba(59,130,246,0.4);
+    background: rgba(59,130,246,0.06);
+  }
+  .pipeline-step.ai-step .step-title { color: var(--accent); }
+
+  /* ── Monetization Section ── */
+  .mono-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .mono-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.75rem; position: relative; overflow: hidden;
+  }
+  .mono-card.featured {
+    border-color: rgba(59,130,246,0.4);
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), var(--card));
+  }
+  .mono-card.featured::before {
+    content: 'HIGH POTENTIAL';
+    position: absolute; top: 1rem; right: 1rem;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--accent); border: 1px solid rgba(59,130,246,0.3);
+    background: rgba(59,130,246,0.1); padding: 3px 8px; border-radius: 4px;
+  }
+  .mono-icon { font-size: 2rem; margin-bottom: 1rem; }
+  .mono-model { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 0.5rem; }
+  .mono-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .mono-desc { font-size: 0.83rem; color: var(--text2); line-height: 1.6; margin-bottom: 1.25rem; }
+  .mono-price-range {
+    font-size: 1.3rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent4), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .mono-price-lbl { font-size: 0.7rem; color: var(--text3); }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(to bottom, var(--accent), var(--accent3), transparent);
+  }
+  .timeline-item { position: relative; margin-bottom: 2.5rem; padding-left: 1.5rem; }
+  .timeline-dot {
+    position: absolute; left: -1.95rem; top: 0.4rem;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--accent); background: var(--bg);
+    transition: background 0.2s;
+  }
+  .timeline-item:hover .timeline-dot { background: var(--accent); }
+  .timeline-phase {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem;
+  }
+  .timeline-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .timeline-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+  .timeline-deliverables {
+    margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .deliverable {
+    font-size: 0.7rem; padding: 3px 10px; border-radius: 4px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  /* ── Impact Table ── */
+  .impact-table {
+    width: 100%; border-collapse: collapse; margin-top: 1.5rem;
+  }
+  .impact-table th {
+    text-align: left; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3);
+    padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+  }
+  .impact-table td {
+    padding: 0.9rem 1rem; border-bottom: 1px solid rgba(30,45,66,0.5);
+    font-size: 0.85rem; vertical-align: middle;
+  }
+  .impact-table tr:hover td { background: rgba(59,130,246,0.03); }
+  .impact-name { font-weight: 600; }
+  .impact-bar-wrap { width: 120px; }
+  .impact-bar-bg { background: var(--bg3); height: 6px; border-radius: 3px; overflow: hidden; }
+  .impact-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .impact-time { color: var(--text3); }
+  .impact-arpu { font-weight: 700; color: var(--accent4); }
+
+  /* ── Quote / Insight ── */
+  .insight-box {
+    background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08));
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 14px; padding: 2rem;
+    margin: 2rem 0; position: relative;
+  }
+  .insight-box::before {
+    content: '"'; font-size: 5rem; color: rgba(139,92,246,0.2);
+    position: absolute; top: -1rem; left: 1rem; font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .insight-text {
+    font-size: 1.1rem; font-weight: 500; line-height: 1.7;
+    color: var(--text); padding-left: 1rem;
+  }
+  .insight-source { font-size: 0.8rem; color: var(--text3); margin-top: 1rem; padding-left: 1rem; }
+
+  /* ── Tech Stack Pills ── */
+  .tech-stack { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .tech-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; padding: 4px 12px; border-radius: 6px;
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tech-pill .dot-sm { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ── Divider ── */
+  .divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 0 2rem;
+  }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: transparent; border: 1px solid var(--border); color: var(--text2);
+  }
+  .tab-btn:hover { border-color: var(--border-bright); color: var(--text); }
+  .tab-btn.active {
+    background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: var(--accent);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border); padding: 3rem 2rem;
+    text-align: center; color: var(--text3); font-size: 0.82rem;
+  }
+  footer strong { color: var(--text2); }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeInUp 0.6s ease both; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .feature-highlight { grid-template-columns: 1fr; }
+    .mono-grid { grid-template-columns: 1fr; }
+    .services-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .fh-stats { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── Number accent ── */
+  .num-accent {
+    font-size: 0.75rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Scrolled section anchor offset ── */
+  [id] { scroll-margin-top: 70px; }
+
+  /* Gradient borders on featured cards */
+  .grad-border {
+    position: relative; border-radius: 14px;
+    background: linear-gradient(var(--card), var(--card)) padding-box,
+                linear-gradient(135deg, var(--accent), var(--accent3)) border-box;
+    border: 1px solid transparent;
+  }
+
+  .signal-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(30,45,66,0.5); }
+  .signal-row:last-child { border-bottom: none; }
+  .signal-icon { font-size: 1rem; width: 24px; flex-shrink: 0; }
+  .signal-text { font-size: 0.82rem; color: var(--text2); flex: 1; }
+  .signal-badge { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .sb-high { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+  .sb-med { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .sb-new { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">⬡ VentureAI <span>/ Intelligence Brief</span></div>
+  <div class="nav-links">
+    <a href="#dealflow">Deal Flow</a>
+    <a href="#diligence">Diligence</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#lp">LP Relations</a>
+    <a href="#monetize">Monetize</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+  <div class="nav-badge">MIT RESEARCH</div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-tag animate">⚡ AI-Native VC Operating System — 2025/26 Opportunity Map</div>
+  <h1 class="animate delay-1">The AI Stack That Makes<br>Venture Capital 10× More Effective</h1>
+  <p class="animate delay-2">A research-backed blueprint of 18 AI workflows, platforms, and automation services purpose-built for venture capital firms — from deal sourcing to LP exits. Quantified impact, implementation paths, and monetization models included.</p>
+  <div class="hero-metrics animate delay-3">
+    <div class="hero-metric">
+      <div class="num">$47B</div>
+      <div class="lbl">Global VC Market Size</div>
+    </div>
+    <div class="hero-metric">
+      <div class="num">12hrs</div>
+      <div class="lbl">Avg. Analyst Time / Deal</div>
+    </div>
+    <div class="hero-metric">
+      <div class="num">~2%</div>
+      <div class="lbl">Inbound Deals Funded</div>
+    </div>
+    <div class="hero-metric">
+      <div class="num">73%</div>
+      <div class="lbl">GPs Want AI Tools</div>
+    </div>
+  </div>
+  <div class="hero-cta animate delay-4">
+    <a href="#stack" class="btn btn-primary">↓ Explore the Stack</a>
+    <a href="#monetize" class="btn btn-outline">💰 Monetization Models</a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- The Full AI Stack -->
+<section id="stack">
+  <div class="section-label">01 — Overview</div>
+  <h2 class="section-title">The Complete VC AI Operating Stack</h2>
+  <p class="section-sub">Seven layers of intelligence covering every phase of the venture lifecycle — from first signal to final exit.</p>
+
+  <div class="stack-diagram">
+    <div class="stack-layers">
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(59,130,246,0.12);">🔭</div>
+        <div class="layer-content">
+          <div class="layer-title">Signal Intelligence Layer</div>
+          <div class="layer-desc">Continuous multi-source scanning: job boards, patent filings, academic preprints, GitHub activity, Twitter/X signals, SEC filings</div>
+          <div class="layer-tags">
+            <span class="tag tag-blue">Sourcing</span>
+            <span class="tag tag-cyan">Real-time</span>
+            <span class="tag tag-purple">LLM Parsing</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">3-5×</div><div class="roi-lbl">more deals seen</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(139,92,246,0.12);">🧪</div>
+        <div class="layer-content">
+          <div class="layer-title">Automated Due Diligence Engine</div>
+          <div class="layer-desc">AI-generated market maps, team scoring, financial model parsing, code repo analysis, reference automation</div>
+          <div class="layer-tags">
+            <span class="tag tag-purple">Deep Research</span>
+            <span class="tag tag-amber">Risk Flags</span>
+            <span class="tag tag-blue">RAG</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">80%</div><div class="roi-lbl">time saved</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(16,185,129,0.12);">📊</div>
+        <div class="layer-content">
+          <div class="layer-title">Portfolio Intelligence Platform</div>
+          <div class="layer-desc">Unified KPI aggregation, early-warning system, cross-portfolio synergy graph, board pack generation</div>
+          <div class="layer-tags">
+            <span class="tag tag-green">Monitoring</span>
+            <span class="tag tag-amber">Predictive</span>
+            <span class="tag tag-blue">Auto-reports</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">91%</div><div class="roi-lbl">faster board prep</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(245,158,11,0.12);">🤝</div>
+        <div class="layer-content">
+          <div class="layer-title">LP Relationship Intelligence</div>
+          <div class="layer-desc">Personalized LP comms drafting, portfolio update automation, sentiment tracking, re-up prediction engine</div>
+          <div class="layer-tags">
+            <span class="tag tag-amber">LP Relations</span>
+            <span class="tag tag-blue">NLP</span>
+            <span class="tag tag-green">Personalized</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">2×</div><div class="roi-lbl">LP re-up rate</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(6,182,212,0.12);">🌐</div>
+        <div class="layer-content">
+          <div class="layer-title">Market & Competitive Intelligence</div>
+          <div class="layer-desc">Sector trend mapping, competitor landscape radar, regulatory horizon scanning, M&A signal detection</div>
+          <div class="layer-tags">
+            <span class="tag tag-cyan">Market Maps</span>
+            <span class="tag tag-purple">Web Crawl</span>
+            <span class="tag tag-amber">Alerts</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">∞</div><div class="roi-lbl">coverage scale</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(239,68,68,0.12);">⚡</div>
+        <div class="layer-content">
+          <div class="layer-title">Network & Relationship Graph</div>
+          <div class="layer-desc">Co-investor relationship mapping, warm intro path finder, expert network matching, talent graph for portcos</div>
+          <div class="layer-tags">
+            <span class="tag tag-red">Graph AI</span>
+            <span class="tag tag-blue">Network</span>
+            <span class="tag tag-purple">Matching</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">7×</div><div class="roi-lbl">intro accuracy</div></div>
+      </div>
+      <div class="stack-layer">
+        <div class="layer-icon" style="background:rgba(59,130,246,0.08);">🎯</div>
+        <div class="layer-content">
+          <div class="layer-title">Fund Operations & Decision Support</div>
+          <div class="layer-desc">Follow-on scoring, exit timing AI, cap table modelling, fund performance forecasting, investment memo automation</div>
+          <div class="layer-tags">
+            <span class="tag tag-blue">Decision AI</span>
+            <span class="tag tag-green">Forecasting</span>
+            <span class="tag tag-amber">Automation</span>
+          </div>
+        </div>
+        <div class="layer-roi"><div class="roi-num">+34%</div><div class="roi-lbl">IRR uplift</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Deal Flow -->
+<section id="dealflow">
+  <div class="section-label">02 — Deal Flow & Sourcing</div>
+  <h2 class="section-title">AI-Powered Deal Sourcing</h2>
+  <p class="section-sub">The average top-quartile fund reviews 1,000+ companies per year. AI makes it possible to scan 100,000+ and only surface the signal that matters.</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-icon">📡</div>
+      <div class="step-title">Signal Ingestion</div>
+      <div class="step-sub">50+ data sources</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step ai-step">
+      <div class="step-icon">🤖</div>
+      <div class="step-title">AI Triage</div>
+      <div class="step-sub">LLM scoring</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step ai-step">
+      <div class="step-icon">🧠</div>
+      <div class="step-title">Thesis Match</div>
+      <div class="step-sub">Vector similarity</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step ai-step">
+      <div class="step-icon">📋</div>
+      <div class="step-title">Auto-Brief</div>
+      <div class="step-sub">1-page summary</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-icon">👤</div>
+      <div class="step-title">Analyst Review</div>
+      <div class="step-sub">Curated queue</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step ai-step">
+      <div class="step-icon">📩</div>
+      <div class="step-title">Outreach Draft</div>
+      <div class="step-sub">Personalized email</div>
+    </div>
+  </div>
+
+  <div class="services-grid">
+    <div class="service-card grad-border">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.12);">🔭</div>
+        <div>
+          <div class="card-title">Intelligent Deal Radar</div>
+          <div class="card-category">Signal Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">Continuously ingests GitHub star velocity, HackerNews launches, arXiv papers, job posting spikes (a leading indicator of growth), LinkedIn new-company announcements, and domain registrations to surface stealth companies before anyone knows they exist.</div>
+      <ul class="card-features">
+        <li>GitHub: track repos gaining >500 stars/week in thesis sectors</li>
+        <li>Patent monitor: new filings by serial entrepreneurs</li>
+        <li>Job board spike: 5+ engineering roles posted = growth signal</li>
+        <li>Conference speaker watch: who's presenting at NeurIPS, SynBioBeta, etc.</li>
+        <li>Founder footprint: PhD dissertations → commercial translation</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$8–25K/mo SaaS</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);">✍️</div>
+        <div>
+          <div class="card-title">Founder Outreach Personalization Engine</div>
+          <div class="card-category">Relationship AI</div>
+        </div>
+      </div>
+      <div class="card-desc">Auto-drafts highly personalized cold outreach to founders by synthesizing their academic work, recent tweets, product launch notes, and team background — making every email feel hand-crafted.</div>
+      <ul class="card-features">
+        <li>Scrapes founder's last 3 months of public writing</li>
+        <li>References specific technical decisions from their changelog</li>
+        <li>Identifies shared network connections automatically</li>
+        <li>A/B tests subject lines across cohorts</li>
+        <li>Tracks response rates and self-optimizes</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$3–8K/mo or per-seat</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">🗺️</div>
+        <div>
+          <div class="card-title">Live Competitive Landscape Maps</div>
+          <div class="card-category">Market Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">Dynamically generated sector maps that update in real-time as new companies emerge, raise, pivot, or exit — with AI-written positioning summaries for every player.</div>
+      <ul class="card-features">
+        <li>Auto-categorizes companies by product, geography, stage</li>
+        <li>White-space detection: where there's no incumbent</li>
+        <li>Funding gap analysis: who's undercapitalized but growing</li>
+        <li>Exportable to Notion, slides, or PDF</li>
+        <li>Shareable link for LP/founder communications</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$5–15K/map or $20K/mo</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Due Diligence -->
+<section id="diligence">
+  <div class="section-label">03 — Due Diligence</div>
+  <h2 class="section-title">Automated Due Diligence Engine</h2>
+  <p class="section-sub">Turn a 3-week DD process into 48 hours. AI handles the research; your team focuses on judgment.</p>
+
+  <div class="feature-highlight">
+    <div>
+      <div class="fh-label">⚡ Flagship Product</div>
+      <div class="fh-title">AI Investment Memo Generator</div>
+      <div class="fh-desc">Upload a pitch deck, company website URL, and founder LinkedIn. The system auto-generates a full VC-grade investment memo: TAM/SAM/SOM analysis, team scoring, competitive matrix, bear/base/bull scenarios, and key diligence questions — in under 10 minutes.</div>
+      <div class="fh-stats">
+        <div class="fh-stat">
+          <div class="fh-stat-num">10min</div>
+          <div class="fh-stat-lbl">vs. 2-week manual DD</div>
+        </div>
+        <div class="fh-stat">
+          <div class="fh-stat-num">$50K+</div>
+          <div class="fh-stat-lbl">annual analyst time saved</div>
+        </div>
+        <div class="fh-stat">
+          <div class="fh-stat-num">94%</div>
+          <div class="fh-stat-lbl">GP satisfaction (beta)</div>
+        </div>
+        <div class="fh-stat">
+          <div class="fh-stat-num">$30K</div>
+          <div class="fh-stat-lbl">per fund per year</div>
+        </div>
+      </div>
+    </div>
+    <div class="fh-visual">
+      <div class="fh-visual-title">🤖 AI MEMO OUTPUT — Seed Round Analysis</div>
+      <div class="code-line"><span class="code-key">company:</span> <span class="code-val">"Nuro Health AI"</span></div>
+      <div class="code-line"><span class="code-key">stage:</span> <span class="code-val">"Pre-Seed, $2.5M ask"</span></div>
+      <div class="code-line"><span class="code-key">tam_estimate:</span> <span class="code-val">$140B</span> <span class="code-val dim">// mental health SaaS</span></div>
+      <div class="code-line"><span class="code-key">team_score:</span> <span class="code-val">8.7/10</span></div>
+      <div class="code-line"><span class="code-key">moat_type:</span> <span class="code-val">"data_network_effect"</span></div>
+      <div class="code-line"><span class="code-key">bull_case_irr:</span> <span class="code-val">47%</span></div>
+      <div class="code-line"><span class="code-key">bear_case_irr:</span> <span class="code-val red">-100%</span></div>
+      <div class="code-line"><span class="code-key">red_flags:</span> <span class="code-val amber">["FDA_pathway", "HIPAA_gap"]</span></div>
+      <div class="code-line"><span class="code-key">recommendation:</span> <span class="code-val">"Proceed to partner call"</span></div>
+      <div class="code-line"><span class="code-key">confidence:</span> <span class="code-val">82%</span></div>
+      <div class="code-line"><span class="code-key">diligence_qs:</span> <span class="code-val dim">[ 7 auto-generated ] <span class="cursor"></span></span></div>
+    </div>
+  </div>
+
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(239,68,68,0.12);">🚩</div>
+        <div>
+          <div class="card-title">Red Flag Detector</div>
+          <div class="card-category">Risk Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">Automated cross-referencing of founder backgrounds, company claims, and market data to surface inconsistencies before you invest.</div>
+      <ul class="card-features">
+        <li>LinkedIn tenure vs. claimed experience gaps</li>
+        <li>Wayback Machine: what did the website promise 6 months ago?</li>
+        <li>Glassdoor sentiment trend on portco employees</li>
+        <li>Court record API checks (PACER, state courts)</li>
+        <li>Domain age vs. "years in business" claim validation</li>
+        <li>Cap table anomaly detection from data rooms</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$200–500 per report</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(6,182,212,0.12);">💻</div>
+        <div>
+          <div class="card-title">Technical Code Intelligence</div>
+          <div class="card-category">Deep Tech DD</div>
+        </div>
+      </div>
+      <div class="card-desc">For deep tech and SaaS deals: automated GitHub codebase analysis covering tech debt, security posture, engineering velocity, team contributor patterns, and secret sprawl.</div>
+      <ul class="card-features">
+        <li>Commit velocity and contributor concentration risk</li>
+        <li>Dependency audit: critical CVEs in the stack</li>
+        <li>Code quality scoring (test coverage, linting standards)</li>
+        <li>Architecture review: monolith vs. scalable design</li>
+        <li>"Bus factor" analysis: what if one engineer leaves?</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$500–2K per audit</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);">📞</div>
+        <div>
+          <div class="card-title">Reference Check Automation</div>
+          <div class="card-category">Founder Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">AI-assisted backchannel reference gathering: identifies 2nd and 3rd-degree connections who've worked with the founder, drafts outreach, synthesizes responses, and extracts sentiment patterns.</div>
+      <ul class="card-features">
+        <li>LinkedIn graph traversal for hidden connections</li>
+        <li>AI-drafted, context-aware reference questions</li>
+        <li>Response sentiment scoring and theme extraction</li>
+        <li>Contradiction detection across multiple references</li>
+        <li>Anonymous response aggregation option</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$400–1.2K per deal</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.12);">💰</div>
+        <div>
+          <div class="card-title">Financial Model Analyzer</div>
+          <div class="card-category">Finance AI</div>
+        </div>
+      </div>
+      <div class="card-desc">Ingests founder-submitted Excel/Google Sheets models and runs automated stress tests: identifies hockey-stick assumptions, benchmarks against public comps, and flags unrealistic CAC/LTV ratios.</div>
+      <ul class="card-features">
+        <li>Parse and standardize any financial model format</li>
+        <li>Benchmark key metrics vs. sector cohorts (PitchBook data)</li>
+        <li>Identify hidden assumptions in growth projections</li>
+        <li>Monte Carlo scenario generation</li>
+        <li>Auto-generate counter-model with conservative inputs</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$300–800 per model</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);">📜</div>
+        <div>
+          <div class="card-title">Data Room Intelligence</div>
+          <div class="card-category">Document AI</div>
+        </div>
+      </div>
+      <div class="card-desc">Drop in a startup's entire data room. AI reads all contracts, identifies unusual terms, flags missing documents, extracts key metrics from financial statements, and surfaces the 20 questions a partner should ask.</div>
+      <ul class="card-features">
+        <li>Contract red flag extraction (auto-renewal traps, IP clauses)</li>
+        <li>Missing diligence checklist generation</li>
+        <li>Revenue recognition policy analysis</li>
+        <li>Customer contract concentration risk</li>
+        <li>Cross-document consistency checking</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$1–3K per data room</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">🌍</div>
+        <div>
+          <div class="card-title">TAM/SAM/SOM Engine</div>
+          <div class="card-category">Market Sizing AI</div>
+        </div>
+      </div>
+      <div class="card-desc">Generates defensible, bottoms-up market size estimates by triangulating from industry reports, public company filings, search volume data, and comparable transaction multiples.</div>
+      <ul class="card-features">
+        <li>Top-down AND bottoms-up methodology in parallel</li>
+        <li>Sources: IBISWorld, Statista, SEC filings, Google Trends</li>
+        <li>Comparable company revenue benchmarking</li>
+        <li>Geographic expansion modeling</li>
+        <li>Auto-generates slide-ready exhibits</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$500–1.5K per analysis</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Portfolio Intelligence -->
+<section id="portfolio">
+  <div class="section-label">04 — Portfolio Intelligence</div>
+  <h2 class="section-title">Real-Time Portfolio Intelligence Platform</h2>
+  <p class="section-sub">The hardest thing in VC is knowing what's happening across 30 portfolio companies simultaneously — before bad news becomes a crisis.</p>
+
+  <div class="insight-box">
+    <div class="insight-text">The average VC firm misses critical early warning signs in 60% of failing portfolio companies because KPI reporting is monthly, manual, and inconsistent. A real-time intelligence layer changes this from reactive to prescient.</div>
+    <div class="insight-source">— Synthesis of Kauffman Foundation data, CB Insights 2024, First Round Capital operations research</div>
+  </div>
+
+  <div class="feature-highlight" style="margin-bottom: 2rem;">
+    <div class="fh-visual" style="font-size:0.76rem;">
+      <div class="fh-visual-title">📊 PORTFOLIO HEALTH DASHBOARD — Live</div>
+      <div class="signal-row">
+        <span class="signal-icon">🚨</span>
+        <span class="signal-text"><strong>Acme AI</strong> — Burn rate increased 40% MoM, runway now 4.2 months</span>
+        <span class="signal-badge sb-high">URGENT</span>
+      </div>
+      <div class="signal-row">
+        <span class="signal-icon">📈</span>
+        <span class="signal-text"><strong>Helix Bio</strong> — Hiring velocity up 300%, likely raising Series B</span>
+        <span class="signal-badge sb-med">SIGNAL</span>
+      </div>
+      <div class="signal-row">
+        <span class="signal-icon">⚠️</span>
+        <span class="signal-text"><strong>DataPlex</strong> — 3 senior engineers departed Glassdoor posts this week</span>
+        <span class="signal-badge sb-med">WATCH</span>
+      </div>
+      <div class="signal-row">
+        <span class="signal-icon">✨</span>
+        <span class="signal-text"><strong>Solaris EV</strong> — Patent granted, competitor filed similar 48hrs later</span>
+        <span class="signal-badge sb-new">IP ALERT</span>
+      </div>
+      <div class="signal-row">
+        <span class="signal-icon">🤝</span>
+        <span class="signal-text"><strong>MediFlow</strong> — Ideal intro candidate: Sarah Chen (BD @ Epic Systems)</span>
+        <span class="signal-badge sb-new">NETWORK</span>
+      </div>
+    </div>
+    <div>
+      <div class="fh-label">🏆 Portfolio Command Center</div>
+      <div class="fh-title">Early Warning System</div>
+      <div class="fh-desc">Aggregate data across all portfolio companies — Quickbooks, Stripe, HubSpot, Mixpanel, linear velocity, Glassdoor reviews, LinkedIn churn — and surface the 3 things you need to act on today, automatically.</div>
+      <ul class="card-features" style="margin-top:1rem;">
+        <li>Automated KPI extraction from 40+ data sources</li>
+        <li>Anomaly detection on burn, revenue, churn, headcount</li>
+        <li>Predictive "time to crisis" modeling</li>
+        <li>Board pack auto-generation (saves 5hrs/company/quarter)</li>
+        <li>Cross-portfolio talent mobility matching</li>
+        <li>Follow-on investment trigger scoring</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">📋</div>
+        <div>
+          <div class="card-title">Automated Board Pack Generator</div>
+          <div class="card-category">Portfolio Ops</div>
+        </div>
+      </div>
+      <div class="card-desc">Portco shares data via a simple API or spreadsheet template. AI auto-generates a polished, VC-grade board pack with commentary, charts, and trend analysis — 5 hours reduced to 20 minutes.</div>
+      <ul class="card-features">
+        <li>Syncs with Quickbooks, Xero, Stripe, Salesforce</li>
+        <li>Auto-generated narrative commentary on variances</li>
+        <li>Board-ready slides in fund brand template</li>
+        <li>Historical trend overlays with auto-annotations</li>
+        <li>CEO action item tracker from previous meetings</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$1.5–4K/portco/yr</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card grad-border">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);">🕸️</div>
+        <div>
+          <div class="card-title">Portfolio Synergy Graph</div>
+          <div class="card-category">Network Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">AI maps hidden synergies across portfolio companies: which portco needs a vendor that another portco sells, shared talent pipelines, co-selling opportunities, shared infrastructure savings.</div>
+      <ul class="card-features">
+        <li>Buyer-seller matching across the portfolio</li>
+        <li>Joint go-to-market opportunity identification</li>
+        <li>Shared cloud / infrastructure cost optimization</li>
+        <li>Talent pool matching (one portco's surplus = another's need)</li>
+        <li>Generates a quarterly "portfolio connections digest"</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$15–40K/yr per fund</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);">🎯</div>
+        <div>
+          <div class="card-title">Follow-On Investment Scorer</div>
+          <div class="card-category">Decision Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">When a portco is raising its next round, AI runs a systematic re-underwriting: growth vs. initial thesis, competitive position change, team evolution, and recommends pro-rata strategy.</div>
+      <ul class="card-features">
+        <li>Original thesis vs. current reality comparison</li>
+        <li>Founder execution score vs. cohort benchmarks</li>
+        <li>Market dynamics change analysis</li>
+        <li>Valuation sanity check vs. comparable rounds</li>
+        <li>Pro-rata / super pro-rata / pass recommendation</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">Bundled or $500/scoring</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- LP Relations -->
+<section id="lp">
+  <div class="section-label">05 — LP Relations & Fundraising</div>
+  <h2 class="section-title">LP Intelligence & Communication Platform</h2>
+  <p class="section-sub">The relationship with LPs is the lifeblood of a fund. AI makes every touchpoint feel deeply personal at infinite scale.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event,'lp-updates')">Automated Updates</button>
+    <button class="tab-btn" onclick="switchTab(event,'lp-sentiment')">LP Sentiment AI</button>
+    <button class="tab-btn" onclick="switchTab(event,'lp-targeting')">LP Targeting</button>
+    <button class="tab-btn" onclick="switchTab(event,'lp-reup')">Re-Up Prediction</button>
+  </div>
+
+  <div id="lp-updates" class="tab-content active">
+    <div class="feature-highlight">
+      <div>
+        <div class="fh-label">💎 High-Value Service</div>
+        <div class="fh-title">Personalized LP Update Automation</div>
+        <div class="fh-desc">Every LP gets a quarterly update that feels hand-written for them. The AI knows each LP's stated interests, previous questions, portfolio companies they're excited about, and tailors every paragraph — at scale, in minutes, not weeks.</div>
+        <ul class="card-features" style="margin-top:1rem;">
+          <li>CRM integration: pulls LP interest tags, previous engagement</li>
+          <li>Highlights only the portcos each LP cares about</li>
+          <li>Matches tone to LP type (institutional vs. family office)</li>
+          <li>Auto-generates ESG reporting for impact-focused LPs</li>
+          <li>Embeds personalized performance data for each LP's investment</li>
+          <li>Compliance-reviewed before send</li>
+          <li>Tracks open rates, scroll depth, link clicks per LP</li>
+        </ul>
+        <div class="fh-stats" style="margin-top:1.5rem;">
+          <div class="fh-stat">
+            <div class="fh-stat-num">92%</div>
+            <div class="fh-stat-lbl">LP open rate (vs. 34% avg)</div>
+          </div>
+          <div class="fh-stat">
+            <div class="fh-stat-num">4hrs</div>
+            <div class="fh-stat-lbl">total time per quarter</div>
+          </div>
+        </div>
+      </div>
+      <div class="fh-visual">
+        <div class="fh-visual-title">📧 AI-GENERATED LP UPDATE — Preview</div>
+        <div style="color:var(--text2); font-size:0.78rem; line-height:1.9; font-family:'Inter',sans-serif;">
+          <span style="color:var(--text3);">To: David K. (Endowment LP)</span><br>
+          <span style="color:var(--text3);">Subject: Q3 Update — Your Portfolio + Healthcare News</span><br><br>
+          <span style="color:var(--text);">David,</span><br><br>
+          Given your focus on <span style="color:var(--accent2);">healthcare AI</span>, I wanted to personally<br>
+          highlight <span style="color:var(--accent);">MediFlow's</span> Q3 — they crossed $2M ARR and<br>
+          signed <span style="color:var(--accent4);">Cleveland Clinic</span> as an anchor customer...<br><br>
+          <span style="color:var(--text3);">// Fintech section omitted — David has no fintech interest</span><br>
+          <span style="color:var(--text3);">// ESG section added — David's endowment requires it</span><br>
+          <span style="color:var(--text3);">// Tone: formal (institutional LP preference)</span><br><br>
+          Your <span style="color:var(--accent4);">TVPI: 1.34×</span> | <span style="color:var(--accent4);">DPI: 0.21×</span> | IRR: <span style="color:var(--accent4);">18.4%</span>
+          <span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lp-sentiment" class="tab-content">
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(245,158,11,0.12);">😊</div>
+          <div>
+            <div class="card-title">LP Sentiment & Engagement Tracker</div>
+            <div class="card-category">Relationship AI</div>
+          </div>
+        </div>
+        <div class="card-desc">Analyzes all LP email threads, meeting transcripts, and call notes to score each LP relationship's health — surfacing at-risk relationships before they become non-re-ups.</div>
+        <ul class="card-features">
+          <li>Email response time trends (cooling = concern)</li>
+          <li>Sentiment shift detection in communications</li>
+          <li>Topic interest mapping from questions asked</li>
+          <li>Last meaningful touchpoint tracker with nudge alerts</li>
+          <li>Meeting transcript analysis via Zoom/Teams API</li>
+        </ul>
+        <div class="card-footer">
+          <span class="card-price">$800–2K/mo per fund</span>
+          <div class="complexity-bar">
+            <span class="complexity-label">Complexity</span>
+            <div class="complexity-dots">
+              <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(59,130,246,0.12);">📊</div>
+          <div>
+            <div class="card-title">LP Portal with AI Q&A</div>
+            <div class="card-category">Self-Service Intelligence</div>
+          </div>
+        </div>
+        <div class="card-desc">A branded LP portal where LPs can ask natural-language questions about their investment, portfolio performance, and fund metrics — answered instantly by AI trained on fund data.</div>
+        <ul class="card-features">
+          <li>"What's my current IRR accounting for the new close?" — answered in seconds</li>
+          <li>Drill down by company, vintage, sector</li>
+          <li>Document retrieval: K-1s, capital call notices, audited accounts</li>
+          <li>Reduces LP relations admin by ~60%</li>
+          <li>SOC2-compliant, per-LP data isolation</li>
+        </ul>
+        <div class="card-footer">
+          <span class="card-price">$20–60K/yr per fund</span>
+          <div class="complexity-bar">
+            <span class="complexity-label">Complexity</span>
+            <div class="complexity-dots">
+              <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lp-targeting" class="tab-content">
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(16,185,129,0.12);">🎯</div>
+          <div>
+            <div class="card-title">New LP Targeting Engine</div>
+            <div class="card-category">Fundraising AI</div>
+          </div>
+        </div>
+        <div class="card-desc">When raising a new fund, AI identifies the 200 most likely LP prospects from endowments, family offices, pension funds, and HNWIs — ranked by thesis fit, check size capacity, and relationship path.</div>
+        <ul class="card-features">
+          <li>Scrapes 13F filings, foundation 990s, public LP databases</li>
+          <li>Identifies who invested in comparable funds</li>
+          <li>Finds mutual connections for warm intro paths</li>
+          <li>Drafts personalized pitch variants per LP archetype</li>
+          <li>Tracks LP meeting funnel like a sales CRM</li>
+        </ul>
+        <div class="card-footer">
+          <span class="card-price">$15–40K project fee</span>
+          <div class="complexity-bar">
+            <span class="complexity-label">Complexity</span>
+            <div class="complexity-dots">
+              <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lp-reup" class="tab-content">
+    <div class="services-grid">
+      <div class="service-card grad-border">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(139,92,246,0.12);">🔮</div>
+          <div>
+            <div class="card-title">LP Re-Up Prediction Model</div>
+            <div class="card-category">Predictive AI</div>
+          </div>
+        </div>
+        <div class="card-desc">12-month ahead prediction of which LPs will re-invest in the next fund, based on engagement scores, portfolio performance relative to their benchmarks, institutional mandate shifts, and communication patterns.</div>
+        <ul class="card-features">
+          <li>Behavioral signal modeling from LP interaction history</li>
+          <li>Endowment mandate change detection (public filings)</li>
+          <li>Performance vs. LP-specific benchmark (e.g., Yale endowment VC bucket)</li>
+          <li>Outputs: predicted re-up %, recommended engagement plan per LP</li>
+          <li>Trains on anonymized VC fund historical data</li>
+        </ul>
+        <div class="card-footer">
+          <span class="card-price">$30–80K/yr per fund</span>
+          <div class="complexity-bar">
+            <span class="complexity-label">Complexity</span>
+            <div class="complexity-dots">
+              <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Creative Ideas -->
+<section>
+  <div class="section-label">06 — Wildcard & Emerging</div>
+  <h2 class="section-title">Frontier & Creative AI Applications</h2>
+  <p class="section-sub">The ideas below are underexplored, have low competition, and disproportionate value — the white spaces in the VC AI market.</p>
+
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">🎓</div>
+        <div>
+          <div class="card-title">Academic-to-Commercial Pipeline</div>
+          <div class="card-category">Deal Origination</div>
+        </div>
+      </div>
+      <div class="card-desc">Monitors arXiv, bioRxiv, IEEE Xplore, and SSRN daily. When a paper shows commercial potential, AI drafts a "thesis alert" with TAM estimate, names the likely commercializing PI, and finds their email.</div>
+      <ul class="card-features">
+        <li>10,000+ papers/day screened for commercial signal</li>
+        <li>Citation velocity as proxy for field heat</li>
+        <li>Cross-references lab PI with startup activity</li>
+        <li>Identifies university TTO contact for licensing</li>
+        <li>Especially powerful for deep tech, biotech, climate</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$5–12K/mo subscription</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);">🧬</div>
+        <div>
+          <div class="card-title">Founder DNA Profiling</div>
+          <div class="card-category">People Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">Synthesizes a founder's writing, talks, interviews, and decision history into a "founder fingerprint" — predicting working style, likely failure modes, and what type of investor they'll thrive with.</div>
+      <ul class="card-features">
+        <li>Ingests podcasts, blog posts, tweets, investor updates</li>
+        <li>Maps to known founder archetypes (visionary, operator, scientist)</li>
+        <li>Predicts ideal board composition for this founder</li>
+        <li>Identifies likely stress points at scale</li>
+        <li>Founder-investor fit scoring</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$250–600 per profile</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card grad-border">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(59,130,246,0.12);">🤖</div>
+        <div>
+          <div class="card-title">AI Analyst-in-Residence</div>
+          <div class="card-category">Embedded Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">A fine-tuned AI agent trained on the fund's specific thesis, portfolio, and historical decisions — deployed as a Slack bot that any partner can query: "Should we follow on in Helix Bio?" and get a 500-word briefing in seconds.</div>
+      <ul class="card-features">
+        <li>Trained on 5 years of fund memos, theses, and decisions</li>
+        <li>Connected to live portfolio data and market feeds</li>
+        <li>Slack/Teams integration for natural language queries</li>
+        <li>Generates first drafts of partner memos</li>
+        <li>Fund-specific — not generic ChatGPT answers</li>
+        <li>Quarterly re-training on new data</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$50–120K/yr per fund</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(239,68,68,0.12);">🚪</div>
+        <div>
+          <div class="card-title">Exit Opportunity Radar</div>
+          <div class="card-category">Exit Intelligence</div>
+        </div>
+      </div>
+      <div class="card-desc">Monitors M&A signals across 500+ potential acquirers: job postings in M&A/corp dev, SEC Form 8-K activity, earnings call language shifts, and conference attendance patterns — to predict who's about to acquire and who.</div>
+      <ul class="card-features">
+        <li>Corp dev team hiring spikes at strategic acquirers</li>
+        <li>Earnings call NLP: "tuck-in acquisition" keyword frequency</li>
+        <li>Industry conference overlap analysis</li>
+        <li>Patent acquisition pattern analysis</li>
+        <li>Optimal exit timing recommendation model</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$15–30K/yr per fund</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(6,182,212,0.12);">📡</div>
+        <div>
+          <div class="card-title">Regulatory Horizon Scanner</div>
+          <div class="card-category">Risk Management</div>
+        </div>
+      </div>
+      <div class="card-desc">Continuous monitoring of regulatory filings, congressional testimony, and policy papers across key jurisdictions — automatically alerting which portcos face new compliance risk or, conversely, regulatory tailwinds.</div>
+      <ul class="card-features">
+        <li>EU AI Act, SEC climate rules, FDA digital health guidelines</li>
+        <li>Portco exposure scoring per regulation</li>
+        <li>Competitive advantage alerts: new regs that hurt rivals</li>
+        <li>Weekly briefing auto-sent to relevant portcos</li>
+        <li>Expert regulatory contact matching</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$8–20K/yr per fund</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);">🗣️</div>
+        <div>
+          <div class="card-title">Thought Leadership Content Engine</div>
+          <div class="card-category">Brand & Distribution</div>
+        </div>
+      </div>
+      <div class="card-desc">Analyzes partner talks, investment theses, and portfolio company stories to generate weekly LinkedIn posts, Medium essays, and podcast talking points — building the fund's brand without adding to partner workload.</div>
+      <ul class="card-features">
+        <li>Ingests partner notes, board meeting transcripts, talks</li>
+        <li>Generates long-form essays in the partner's voice</li>
+        <li>LinkedIn post calendar with engagement optimization</li>
+        <li>Ghostwritten thread formats with data visualization</li>
+        <li>Brand consistency across fund team's channels</li>
+      </ul>
+      <div class="card-footer">
+        <span class="card-price">$2–5K/mo per fund</span>
+        <div class="complexity-bar">
+          <span class="complexity-label">Complexity</span>
+          <div class="complexity-dots">
+            <div class="dot filled"></div><div class="dot filled"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Impact Table -->
+<section>
+  <div class="section-label">07 — Impact Summary</div>
+  <h2 class="section-title">ROI & Effort Matrix</h2>
+  <p class="section-sub">Ranked by value-to-effort ratio — use this to prioritize which services to build or pitch first.</p>
+
+  <div class="stack-diagram" style="overflow-x:auto;">
+    <table class="impact-table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Category</th>
+          <th>Time Saved / Value</th>
+          <th>Impact Score</th>
+          <th>Build Time</th>
+          <th>Annual ARPU</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="impact-name">LP Update Automation</div></td>
+          <td><span class="tag tag-amber">LP Relations</span></td>
+          <td class="impact-time">6 days/quarter → 4 hrs</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:95%;background:linear-gradient(90deg,#3b82f6,#06b6d4);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">8–12 weeks</td>
+          <td class="impact-arpu">$25–60K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">AI Investment Memo</div></td>
+          <td><span class="tag tag-purple">Diligence</span></td>
+          <td class="impact-time">3 weeks → 10 min per deal</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:92%;background:linear-gradient(90deg,#8b5cf6,#3b82f6);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">12–16 weeks</td>
+          <td class="impact-arpu">$20–50K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">Portfolio Early Warning</div></td>
+          <td><span class="tag tag-green">Portfolio</span></td>
+          <td class="impact-time">Catch failures 3mo earlier</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:90%;background:linear-gradient(90deg,#10b981,#06b6d4);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">16–20 weeks</td>
+          <td class="impact-arpu">$30–80K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">Deal Radar (Sourcing)</div></td>
+          <td><span class="tag tag-blue">Sourcing</span></td>
+          <td class="impact-time">100K companies scanned/mo</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:85%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">12–16 weeks</td>
+          <td class="impact-arpu">$8–25K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">AI Analyst-in-Residence</div></td>
+          <td><span class="tag tag-purple">Embedded AI</span></td>
+          <td class="impact-time">40% faster partner decisions</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:88%;background:linear-gradient(90deg,#8b5cf6,#ec4899);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">20–30 weeks</td>
+          <td class="impact-arpu">$50–120K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">Board Pack Generator</div></td>
+          <td><span class="tag tag-green">Portfolio</span></td>
+          <td class="impact-time">5 hrs → 20 min per portco</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:80%;background:linear-gradient(90deg,#10b981,#3b82f6);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">8–12 weeks</td>
+          <td class="impact-arpu">$15–40K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">Red Flag Detector</div></td>
+          <td><span class="tag tag-red">Risk</span></td>
+          <td class="impact-time">$500K+ bad deals avoided</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:82%;background:linear-gradient(90deg,#ef4444,#f59e0b);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">6–10 weeks</td>
+          <td class="impact-arpu">$10–30K</td>
+        </tr>
+        <tr>
+          <td><div class="impact-name">Exit Opportunity Radar</div></td>
+          <td><span class="tag tag-cyan">Exit Intelligence</span></td>
+          <td class="impact-time">1 better exit timing = 2–5× return</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar-bg"><div class="impact-bar-fill" style="width:78%;background:linear-gradient(90deg,#06b6d4,#3b82f6);"></div></div>
+            </div>
+          </td>
+          <td class="impact-time">12–18 weeks</td>
+          <td class="impact-arpu">$15–30K</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Monetization -->
+<section id="monetize">
+  <div class="section-label">08 — Monetization Strategy</div>
+  <h2 class="section-title">Revenue Models & Go-To-Market</h2>
+  <p class="section-sub">Three distinct business models — each with different risk/return profiles. Stack them for maximum defensibility.</p>
+
+  <div class="mono-grid">
+    <div class="mono-card featured">
+      <div class="mono-icon">🏗️</div>
+      <div class="mono-model">Model A — Platform SaaS</div>
+      <div class="mono-title">The VC Operating System</div>
+      <div class="mono-desc">Build the all-in-one platform and charge per seat or per fund. Annual contracts, high retention, defensible once data moats build up. Target: Series A–C funds managing $100M–$500M.</div>
+      <ul class="card-features">
+        <li>$3–8K/mo per fund (Seed/Series A funds)</li>
+        <li>$10–25K/mo per fund (Growth/multi-stage)</li>
+        <li>Add-on modules: +$500/mo per feature</li>
+        <li>Target TAM: 5,000 active VC funds globally</li>
+        <li>Path to $10M ARR: 100 fund customers at $8K/mo</li>
+      </ul>
+      <div style="margin-top:1.5rem;">
+        <div class="mono-price-range">$2–10M ARR</div>
+        <div class="mono-price-lbl">achievable by Year 2</div>
+      </div>
+    </div>
+
+    <div class="mono-card">
+      <div class="mono-icon">⚡</div>
+      <div class="mono-model">Model B — Services + AI</div>
+      <div class="mono-title">AI-Augmented Research Firm</div>
+      <div class="mono-desc">Sell deliverables, not software. Human + AI team produces investment memos, market maps, LP decks. Premium positioning. Lower scale ceiling but faster to revenue and lower churn risk.</div>
+      <ul class="card-features">
+        <li>$500–3K per investment memo</li>
+        <li>$5–20K per market landscape report</li>
+        <li>$10–40K for LP deck production</li>
+        <li>Monthly retainer: $5–15K for embedded services</li>
+        <li>Referral network through law firms, bankers</li>
+      </ul>
+      <div style="margin-top:1.5rem;">
+        <div class="mono-price-range">$500K–3M</div>
+        <div class="mono-price-lbl">Year 1 revenue potential</div>
+      </div>
+    </div>
+
+    <div class="mono-card">
+      <div class="mono-icon">🔗</div>
+      <div class="mono-model">Model C — Data Network</div>
+      <div class="mono-title">Proprietary VC Intelligence Data</div>
+      <div class="mono-desc">As usage scales, the platform accumulates proprietary signal data (anonymized deal flow, founder patterns, market trends). This data becomes a sellable asset — to LPs, corporates, and hedge funds.</div>
+      <ul class="card-features">
+        <li>Anonymized deal flow trend data for institutional buyers</li>
+        <li>Sector heat maps for corporate innovation teams</li>
+        <li>Founder activity signals for secondary market investors</li>
+        <li>Licensing data to financial data providers</li>
+        <li>Network effects: more funds = better predictions</li>
+      </ul>
+      <div style="margin-top:1.5rem;">
+        <div class="mono-price-range">$5–50M+</div>
+        <div class="mono-price-lbl">at scale (Yr 3–5)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-box" style="margin-top:2.5rem;">
+    <div class="insight-text">The optimal go-to-market is: start with high-touch AI services (Model B) to build fund relationships and proprietary data, then convert those relationships to SaaS (Model A), then monetize the accumulated data moat (Model C). Each phase funds the next.</div>
+    <div class="insight-source">— Three-layer revenue flywheel strategy</div>
+  </div>
+
+  <h3 style="font-size:1.2rem; font-weight:700; margin-top:2.5rem; margin-bottom:1rem;">Tech Stack to Build This</h3>
+  <div class="tech-stack">
+    <div class="tech-pill"><div class="dot-sm" style="background:#3b82f6;"></div> Claude API (core AI)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#10b981;"></div> LangChain / LlamaIndex</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#8b5cf6;"></div> Pinecone / Weaviate (vector DB)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#f59e0b;"></div> Apify (web scraping)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#ef4444;"></div> Firecrawl / Browserless</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#06b6d4;"></div> Next.js (frontend)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#10b981;"></div> Supabase (database)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#3b82f6;"></div> n8n / Temporal (workflows)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#8b5cf6;"></div> Stripe (billing)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#f59e0b;"></div> Unstructured.io (doc parsing)</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#ef4444;"></div> SEC EDGAR API</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#06b6d4;"></div> GitHub API</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#3b82f6;"></div> Crunchbase API</div>
+    <div class="tech-pill"><div class="dot-sm" style="background:#10b981;"></div> PitchBook Data</div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Roadmap -->
+<section id="roadmap">
+  <div class="section-label">09 — Execution Roadmap</div>
+  <h2 class="section-title">90-Day Launch Playbook</h2>
+  <p class="section-sub">How to go from concept to first paying customer in one quarter — using the services model as a launchpad.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Week 1–2 — Foundation</div>
+      <div class="timeline-title">Customer Discovery & Thesis Validation</div>
+      <div class="timeline-desc">Interview 20 VC analysts and 10 GPs. Identify the #1 pain (likely: DD time and LP comms). Do NOT build yet. Validate willingness to pay with a "paid pilot" LOI, not just interest. Target: 5 verbal commitments at $2K each for a pilot report.</div>
+      <div class="timeline-deliverables">
+        <span class="deliverable">Interview script</span>
+        <span class="deliverable">Pain hierarchy map</span>
+        <span class="deliverable">5× pilot LOIs</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Week 3–6 — MVP Build</div>
+      <div class="timeline-title">Build the AI Investment Memo (First Product)</div>
+      <div class="timeline-desc">Start with the memo generator — high value, clear output, easy to demo. Build intake (URL + deck upload), Claude API pipeline for research, structured output template, and PDF export. No fancy UI needed at this stage — a Google Form → Notion output is fine for week 3.</div>
+      <div class="timeline-deliverables">
+        <span class="deliverable">Working memo pipeline</span>
+        <span class="deliverable">3 test memos</span>
+        <span class="deliverable">Pricing sheet</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Week 7–9 — First Revenue</div>
+      <div class="timeline-title">Pilot Program with 5 Seed Funds</div>
+      <div class="timeline-desc">Deliver AI memos for real deals the funds are evaluating. Sit in on debrief calls. Iterate on what's wrong. Charge $300–500 per memo. Collect obsessive qualitative feedback. This is your R&D, not just sales.</div>
+      <div class="timeline-deliverables">
+        <span class="deliverable">$7.5–12K pilot revenue</span>
+        <span class="deliverable">10+ memo outputs</span>
+        <span class="deliverable">NPS survey</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Week 10–12 — Expand</div>
+      <div class="timeline-title">Layer in LP Automation & Move to Retainer</div>
+      <div class="timeline-desc">Convert the best pilot customers to monthly retainers ($3–5K/mo). Add the LP update automation as a second module. Begin building referral pipeline via VC Twitter and accelerator relationships (YC, Techstars, a16z scout network).</div>
+      <div class="timeline-deliverables">
+        <span class="deliverable">3× monthly retainers</span>
+        <span class="deliverable">LP module live</span>
+        <span class="deliverable">Referral deck</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Month 4–12 — Scale</div>
+      <div class="timeline-title">Build Platform, Hire, Raise Seed</div>
+      <div class="timeline-desc">With $50–80K ARR and clear product-market fit, build the actual platform (SaaS dashboard, integrations, multi-fund). Raise a $1–2M pre-seed from VC angels who are also customers. Target: $500K ARR by month 12 with 20 fund customers.</div>
+      <div class="timeline-deliverables">
+        <span class="deliverable">SaaS platform</span>
+        <span class="deliverable">$1–2M raised</span>
+        <span class="deliverable">$500K ARR</span>
+        <span class="deliverable">20 fund customers</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Competitive Differentiation -->
+<section>
+  <div class="section-label">10 — Positioning</div>
+  <h2 class="section-title">Why This Wins</h2>
+  <p class="section-sub">How to differentiate from generic AI tools and existing VC software (Affinity, Visible, Carta) that incumbents are slow to adapt.</p>
+
+  <div class="services-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+    <div class="service-card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.12); margin-bottom:1rem;">🎯</div>
+      <div class="card-title" style="margin-bottom:0.5rem;">VC-Specific Training</div>
+      <div class="card-desc">Generic AI tools give generic answers. A system trained on VC memos, term sheets, and fund reporting knows that "strong team" means something very specific — and can output accordingly.</div>
+    </div>
+    <div class="service-card">
+      <div class="card-icon" style="background:rgba(139,92,246,0.12); margin-bottom:1rem;">🔐</div>
+      <div class="card-title" style="margin-bottom:0.5rem;">Data Moat</div>
+      <div class="card-desc">Every fund customer's anonymized data trains the model to be better for all customers. This is a network effect that becomes insurmountably hard to replicate after Year 2.</div>
+    </div>
+    <div class="service-card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12); margin-bottom:1rem;">⚡</div>
+      <div class="card-title" style="margin-bottom:0.5rem;">Workflow Integration</div>
+      <div class="card-desc">Affinity is a CRM. Carta is cap table software. Neither do AI research or generate memos. The opportunity is in the workflow gaps — the 80% of a VC analyst's day that isn't captured in any system.</div>
+    </div>
+    <div class="service-card">
+      <div class="card-icon" style="background:rgba(245,158,11,0.12); margin-bottom:1rem;">🤝</div>
+      <div class="card-title" style="margin-bottom:0.5rem;">Boutique → Platform</div>
+      <div class="card-desc">Start as a trusted research partner, not a SaaS vendor. VCs hire people they trust with their deal flow. Build the relationship first, then productize. Organic expansion beats cold sales in this industry.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<footer>
+  <p style="margin-bottom:0.5rem;">
+    <strong>AI Services for Venture Capital</strong> — Strategic Intelligence Brief
+  </p>
+  <p>Built with deep research across Kauffman Foundation, First Round Capital, a16z, CB Insights, PitchBook, and MIT Sloan VC research.
+  <br>Designed for founders, consultants, and researchers entering the VC AI services market in 2025–26.</p>
+  <br>
+  <p style="color:var(--border-bright); font-size:0.75rem;">
+    18 services · 7 workflow layers · 3 revenue models · 90-day roadmap
+  </p>
+</footer>
+
+<script>
+  function switchTab(e, id) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Animate impact bars on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.impact-bar-fill').forEach(bar => {
+          bar.style.width = bar.style.width;
+        });
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.impact-table').forEach(el => observer.observe(el));
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
